@@ -1,0 +1,4 @@
+[submodule "FBImporter"]
+	path = FBImporter
+	url = https://github.com/fxdApokalypse/sharkb_fbimporter
+	branch = fbimporter
