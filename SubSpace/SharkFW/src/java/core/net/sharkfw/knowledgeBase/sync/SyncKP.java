@@ -57,11 +57,11 @@ public class SyncKP extends KnowledgePort implements KnowledgeBaseListener
 
     //private Interest _syncInterest;
     private TimestampList _timestamps;
-    private final String SYNCHRONIZATION_NAME = "SyncKP_synchronization_token";
-    private final String SYNCHRONIZATION_SERIALIZED_CC_PROPERTY = "SyncKP_serialized_ccs";
-    private final String SYNCHRONIZATION_PROTOCOL_STATE = "SyncKP_serialized_state";
-    private final String SYNCHRONIZATION_OFFER = "SyncKP_synchronization_offer";
-    private final String SYNCHRONIZATION_REQUEST = "SyncKP_synchronization_request";
+    private static final String SYNCHRONIZATION_NAME = "SyncKP_synchronization_token";
+    private static final String SYNCHRONIZATION_SERIALIZED_CC_PROPERTY = "SyncKP_serialized_ccs";
+    private static final String SYNCHRONIZATION_PROTOCOL_STATE = "SyncKP_serialized_state";
+    private static final String SYNCHRONIZATION_OFFER = "SyncKP_synchronization_offer";
+    private static final String SYNCHRONIZATION_REQUEST = "SyncKP_synchronization_request";
 
     // Fragmentation parameter for sending knowledge
     private FragmentationParameter _topicsFP;
@@ -70,11 +70,12 @@ public class SyncKP extends KnowledgePort implements KnowledgeBaseListener
 
     private void initialize(SharkEngine engine, SyncKB kb, SharkCS interest, PeerSTSet remotePeers, int retryTimeout) throws SharkKBException
     {
+        //Check if paramters are null
         Objects.requireNonNull(engine, "The SharkEngine must not be null.");
         Objects.requireNonNull(kb, "The KnowldgeBase must not be null.");
-        Objects.requireNonNull(interest, "The interest must not be null.");
-        Objects.requireNonNull(remotePeers, "The remote peers must not be null.");
-        
+        Objects.requireNonNull(interest, "The SharkCS must not be null.");
+        Objects.requireNonNull(remotePeers, "The PeerSTSet must not be null.");
+        //set all parameters
         _kb = kb;
         _engine = engine;
         _kb.addListener(this);
@@ -82,7 +83,7 @@ public class SyncKP extends KnowledgePort implements KnowledgeBaseListener
         _topicsFP = new FragmentationParameter();
         _peersFP = new FragmentationParameter();
         _timestamps = new TimestampList(remotePeers, _kb);
-        
+        //set interest and add Identifier Tag
         setInterest(interest);
         addIdentifierTag();
     }
@@ -126,36 +127,13 @@ public class SyncKP extends KnowledgePort implements KnowledgeBaseListener
         {
             throw new SharkKBException("SharkKB for SyncKP needs to have an owner set! Can't create SyncKP.");
         }
-//        _kb = kb;
-//        _engine = engine;
-//        _kb.addListener(this);
-//
-//        this._retryTimeout = retryTimeout * 1000;
-//        this._topicsFP = new FragmentationParameter();
-//        this._peersFP = new FragmentationParameter();
-        // We need to have an owner of the kb
-//        if (_kb.getOwner() == null)
-//        {
-//            L.e("SharkKB for SyncKP needs to have an owner set! Can't create SyncKP.");
-//            return;
-//        }
-        // Create a sync queue for all known peers
+        // Snyc with all Peers except owner of KB
         PeerSTSet peersToSyncWith = kb.getPeerSTSet();
         peersToSyncWith.removeSemanticTag(owner);
-//        _timestamps = new TimestampList(peersToSyncWith, _kb);
 
-        // Create the semantic Tag which is used to identify a SyncKP
+        //Create interest with empty STSet for topics and KB owner in the peer dimension set
+        //Sync Identifer will be added to the  empty STSet later
         STSet syncTag = InMemoSharkKB.createInMemoSTSet();
-//        try
-//        {
-//            syncTag = InMemoSharkKB.createInMemoSTSet();
-//            syncTag.createSemanticTag(SYNCHRONIZATION_NAME, SYNCHRONIZATION_NAME);
-//        } catch (SharkKBException e)
-//        {
-//            L.d("Tag SharkKP_synchronization which is used by SyncKP already exists!");
-//            throw e;
-//        }
-        // And an interest with me as the peer dimension set
         PeerSTSet ownerPeerSTSet = InMemoSharkKB.createInMemoPeerSTSet();
         ownerPeerSTSet.merge(owner);
         SharkCS syncInterest = InMemoSharkKB.createInMemoInterest(syncTag, null, ownerPeerSTSet, null, null, null, SharkCS.DIRECTION_OUT);
