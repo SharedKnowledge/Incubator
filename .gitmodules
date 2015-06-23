@@ -1,7 +1,6 @@
 [submodule "FBImporter"]
 	path = FBImporter
 	url = https://github.com/yveskaufmann/sharkb_fbimporter
-	branch = fbimporter
 [submodule "TwitterImporter"]
 	path = TwitterImporter
 	url = https://github.com/pascalweiss/TwitterImporter.git
