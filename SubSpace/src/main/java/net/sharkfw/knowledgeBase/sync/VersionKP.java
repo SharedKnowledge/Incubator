@@ -15,6 +15,7 @@ import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.PeerSTSet;
+import net.sharkfw.knowledgeBase.PeerSemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
@@ -50,7 +51,7 @@ public abstract class VersionKP extends KnowledgePort
         }
     }
 
-    protected abstract Knowledge getOffer();
+    protected abstract Knowledge getOffer() throws SharkKBException;
 
     /**
      * Inserts the received {@link Knowledge} into the local
@@ -73,54 +74,54 @@ public abstract class VersionKP extends KnowledgePort
     @Override
     protected void doInsert(final Knowledge knowledge, final KEPConnection kepConnection)
     {
-        System.out.println("Hello World!!!");
-        L.d("****************************:::::::::::::::::::::::::::::::::::::::::::::Insert bekommen:\n" + L.knowledge2String(knowledge));
-//        try
-//        {
-//            // Only do insert, wenn we are actually intereded in receiving Information.
-//            if (isIKP())
-//            {
-//                final Enumeration<ContextPoint> contextPoints = knowledge.contextPoints();
-//                while (contextPoints.hasMoreElements())
-//                {
-//                    final ContextPoint remoteContextPoint = contextPoints.nextElement();
-//                    final ContextCoordinates remoteContextCoordinates = remoteContextPoint.getContextCoordinates();
-//                    final ContextPoint localContextPoint = kb.getContextPoint(remoteContextCoordinates);
-//                    // Compare version of the ContextPoint and ad to KnowledgeBase if necessary.
-//                    final int localVersion = (localContextPoint == null) ? 0 : VersionUtils.getVersion(localContextPoint);
-//                    final int remoteVersion = VersionUtils.getVersion(remoteContextPoint);
-//                    if (remoteVersion > localVersion)
-//                    {
-//                        VersionUtils.replaceContextPoint(remoteContextPoint, kb);
-//                    }
-//                }
-//            }
-//        } catch (SharkKBException ex)
-//        {
-//            throw new IllegalStateException("Exception occurred in doInsert.", ex);
-//        }
+        try
+        {
+            // Only do insert, wenn we are actually intereded in receiving Information.
+            if (isIKP())
+            {
+                final Enumeration<ContextPoint> contextPoints = knowledge.contextPoints();
+                while (contextPoints.hasMoreElements())
+                {
+                    final ContextPoint remoteContextPoint = contextPoints.nextElement();
+                    final ContextCoordinates remoteContextCoordinates = remoteContextPoint.getContextCoordinates();
+                    final ContextPoint localContextPoint = kb.getContextPoint(remoteContextCoordinates);
+                    // Compare version of the ContextPoint and ad to KnowledgeBase if necessary.
+                    final int localVersion = (localContextPoint == null) ? 0 : VersionUtils.getVersion(localContextPoint);
+                    final int remoteVersion = VersionUtils.getVersion(remoteContextPoint);
+                    if (remoteVersion > localVersion)
+                    {
+                        VersionUtils.replaceContextPoint(remoteContextPoint, kb);
+                    }
+                }
+            }
+        } catch (SharkKBException ex)
+        {
+            throw new IllegalStateException("Exception occurred in doInsert.", ex);
+        }
     }
 
     @Override
     protected void doExpose(final SharkCS context, final KEPConnection kepConnection)
     {
-        String contextString = L.contextSpace2String(context);
-        L.d("************************************** " + kb.getOwner().getName() + " Received interest:\n" + contextString);
+        L.d(kb.getOwner().getName() + " received interest:\n" + L.contextSpace2String(context), this);
         try
         {
-            kepConnection.insert(getOffer(), kepConnection.getSender().getAddresses());
+            final PeerSemanticTag sender = kepConnection.getSender();
+            final String[] peerAddresses = sender.getAddresses();
+            final Date lastPeerMeeting = timestampList.getTimestamp(sender);
+            final Knowledge knowledge = getOffer(lastPeerMeeting);
+            L.d(kb.getOwner().getName() + " sends Knowledge:\n" + L.knowledge2String(knowledge), this);
+            kepConnection.insert(knowledge, peerAddresses);
+            notifyInsertSent(this, knowledge);
+            timestampList.resetTimestamp(sender);
         } catch (SharkException ex)
         {
-            Logger.getLogger(VersionKP.class.getName()).log(Level.SEVERE, null, ex);
-            throw new IllegalStateException(ex);
-        }
-        this.notifyExposeSent(this, this.getInterest());
-        
+            throw new IllegalStateException("Exception occurred in doExpose.", ex);
+        } 
     }
 
-    private List<SyncContextPoint> collectSyncContextPoints(final Date lastPeerMeeting) throws SharkKBException
+    private Knowledge getOffer(final Date lastPeerMeeting) throws SharkKBException
     {
-        final List<SyncContextPoint> retrievedContextPoints = new ArrayList<SyncContextPoint>();
         final Knowledge offer = getOffer();
         final Enumeration<ContextPoint> offeredContextPoints = offer.contextPoints();
         while (offeredContextPoints.hasMoreElements())
@@ -133,11 +134,10 @@ public abstract class VersionKP extends KnowledgePort
                 final Date contextPointTimestamp = new Date(time);
                 if (contextPointTimestamp.after(lastPeerMeeting))
                 {
-                    final SyncContextPoint syncContextPoint = VersionUtils.copy(element);
-                    retrievedContextPoints.add(syncContextPoint);
+                    offer.removeContextPoint(element);
                 }
             }
         }
-        return retrievedContextPoints;
+        return offer;
     }
 }

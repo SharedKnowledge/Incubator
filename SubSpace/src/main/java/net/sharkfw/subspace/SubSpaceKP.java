@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.SharkCS;
+import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoKnowledge;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
@@ -31,27 +32,9 @@ public class SubSpaceKP extends VersionKP
     }
 
     @Override
-    protected Knowledge getOffer()
+    protected Knowledge getOffer() throws SharkKBException
     {
-        try
-        {
-            L.d("#########" + kb.getOwner().getName() + " getOffer #########", this);
-            final Knowledge knowledge = new InMemoKnowledge(kb);
-            Enumeration<ContextPoint> cpEnumeration = kb.getAllContextPoints();
-            while (cpEnumeration.hasMoreElements())
-            {
-                ContextPoint nextElement = cpEnumeration.nextElement();
-                knowledge.addContextPoint(nextElement);
-                
-            }
-            final String knowledgeString = L.knowledge2String(knowledge);
-            L.d("+++++++++++++++++++++++++++++Offer Knowledge (CP: " + knowledge.getNumberOfContextPoints() + "):\n" + knowledgeString);
-            return knowledge;
-        } catch (SharkKBException ex)
-        {
-            Logger.getLogger(SubSpaceKP.class.getName()).log(Level.SEVERE, null, ex);
-            throw new IllegalStateException(ex);
-        }
+        return SharkCSAlgebra.extract(kb, interest);
     }
     
 }

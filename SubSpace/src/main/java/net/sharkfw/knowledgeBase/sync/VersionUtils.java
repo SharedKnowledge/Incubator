@@ -6,11 +6,14 @@
 package net.sharkfw.knowledgeBase.sync;
 
 import java.util.Iterator;
+import java.util.List;
 import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.Information;
+import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
+import net.sharkfw.knowledgeBase.inmemory.InMemoKnowledge;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 
 /**
@@ -24,6 +27,16 @@ public final class VersionUtils
 
     private VersionUtils()
     {
+    }
+
+    public static Knowledge toKnowledge(final List<? extends ContextPoint> contextPoints)
+    {
+        final Knowledge knowledge = new InMemoKnowledge();
+        for (ContextPoint contextPoint : contextPoints)
+        {
+            knowledge.addContextPoint(contextPoint);
+        }
+        return knowledge;
     }
 
     public static int getVersion(final ContextPoint contextPoint) throws SharkKBException
