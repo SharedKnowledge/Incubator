@@ -15,13 +15,11 @@ import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
-import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.peer.KnowledgePort;
 import net.sharkfw.peer.SharkEngine;
-import net.sharkfw.peer.StandardKP;
 import net.sharkfw.subspace.SubSpaceKP;
 import net.sharkfw.system.L;
 import net.sharkfw.system.SharkSecurityException;
@@ -54,18 +52,19 @@ public class SubSpaceKPTests
     }
 
     @Test
-    public void simpleDataExchange() throws SharkKBException, SharkSecurityException, IOException, SharkProtocolNotSupportedException
+    public void simpleDataExchange() throws SharkKBException, SharkSecurityException, IOException, SharkProtocolNotSupportedException, InterruptedException
     {
-        L.d("Start testing...");
         final Dummy alice = new Dummy(ALICE_NAME, ALICE_SI);
         final SharkEngine aliceEngine = alice.getEngine();
         final SyncKB aliceKB = alice.getKnowledgeBase();
         final Dummy bob = new Dummy(BOB_NAME, BOB_SI);
         final SharkEngine bobEngine = bob.getEngine();
         final SyncKB bobKB = bob.getKnowledgeBase();
-        
-        L.d("alice Adress: " + Arrays.toString(alice.getPeer().getAddresses()) + ", Bob Adresses: " + Arrays.toString(bob.getPeer().getAddresses()));
 
+        L.d("Alice: " + Arrays.toString(alice.getPeer().getAddresses()), this);
+        L.d("Bob: " + Arrays.toString(bob.getPeer().getAddresses()), this);
+        
+        //Add teapot to alcie
         final SemanticTag teapot = SEMANTIC_TAG_FACTORY.createSemanticTag("teapot", TEAPOT_SI);
         final ContextCoordinates teapotCC = aliceKB.createContextCoordinates(
                 teapot,
@@ -76,9 +75,11 @@ public class SubSpaceKPTests
                 null,
                 SharkCS.DIRECTION_INOUT
         );
-        
+        final ContextPoint teapotCP = aliceKB.createContextPoint(teapotCC);
+        teapotCP.addInformation("Teapots can be very pretty.");
         final SemanticTag java = SEMANTIC_TAG_FACTORY.createSemanticTag("java", JAVA_SI);
-        final ContextCoordinates javaCC = bobKB.createContextCoordinates(
+        //Bobs Java
+        final ContextCoordinates bobJavaCC = bobKB.createContextCoordinates(
                 java,
                 null,
                 bob.getPeer(),
@@ -87,14 +88,29 @@ public class SubSpaceKPTests
                 null,
                 SharkCS.DIRECTION_INOUT
         );
-        final ContextPoint javaCP = bobKB.createContextPoint(javaCC);
-        javaCP.addInformation("Bob ist toll!");
-        L.d("################****************** Bob\n" + L.kb2String(bobKB));
+        final ContextPoint bobJavaCP = bobKB.createContextPoint(bobJavaCC);
+        bobJavaCP.addInformation("Java ist die beste Programmiersprache!");
+        final SharkCS bobJavaCS = bobKB.createInterest(bobJavaCC);
 
+        //Alices Java
+        final ContextCoordinates aliceJavaCC = bobKB.createContextCoordinates(
+                java,
+                null,
+                alice.getPeer(),
+                bob.getPeer(),
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+        final SharkCS aliceJavaCS = aliceKB.createInterest(aliceJavaCC);
 
-        final SharkCS teapotCS = aliceKB.createInterest(teapotCC);
-        final SubSpaceKP aliceKP = new SubSpaceKP(aliceEngine, teapotCS, aliceKB);
-        final SubSpaceKP bobKP = new SubSpaceKP(bobEngine, teapotCS, bobKB);
+        //KBs before sending
+        L.d(L.kb2String(aliceKB), this);
+        L.d(L.kb2String(bobKB), this);
+        
+        //KnowledgePorts
+        final SubSpaceKP aliceKP = new SubSpaceKP(aliceEngine, aliceJavaCS, aliceKB);
+        final SubSpaceKP bobKP = new SubSpaceKP(bobEngine, bobJavaCS, bobKB);
 
         final List<KnowledgePort> alicePorts = Collections.list(aliceEngine.getKPs());
         final List<KnowledgePort> bobPorts = Collections.list(bobEngine.getKPs());
@@ -105,10 +121,14 @@ public class SubSpaceKPTests
         aliceEngine.startTCP(alice.getPort());
         aliceEngine.publishKP(aliceKP);
         //bobEngine.publishKP(subSpaceKP);
+        Thread.sleep(2000);
         Assert.assertEquals(1, alicePorts.size());
         Assert.assertEquals(1, bobPorts.size());
-        
         //bobEngine.stopTCP();
         //aliceEngine.stopTCP();
+        
+        //KBs after sending
+        L.d(L.kb2String(aliceKB), this);
+        L.d(L.kb2String(bobKB), this);
     }
 }

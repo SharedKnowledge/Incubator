@@ -5,18 +5,14 @@
  */
 package net.sharkfw.subspace;
 
-import java.util.Enumeration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
-import net.sharkfw.knowledgeBase.inmemory.InMemoKnowledge;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.knowledgeBase.sync.VersionKP;
 import net.sharkfw.peer.SharkEngine;
+import net.sharkfw.security.utility.LoggingUtil;
 import net.sharkfw.system.L;
 
 /**
@@ -34,7 +30,10 @@ public class SubSpaceKP extends VersionKP
     @Override
     protected Knowledge getOffer() throws SharkKBException
     {
-        return SharkCSAlgebra.extract(kb, interest);
+        final Knowledge knowledge = SharkCSAlgebra.extract(kb, interest);
+        final String knowledgeString = L.knowledge2String(knowledge);
+        LoggingUtil.debugBox("Collected Knowledge.", knowledgeString, this);
+        return knowledge;
     }
-    
+
 }

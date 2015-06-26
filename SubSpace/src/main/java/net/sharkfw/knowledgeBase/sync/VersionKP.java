@@ -5,10 +5,12 @@
  */
 package net.sharkfw.knowledgeBase.sync;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.sharkfw.knowledgeBase.ContextCoordinates;
@@ -23,6 +25,7 @@ import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.peer.KEPConnection;
 import net.sharkfw.peer.KnowledgePort;
 import net.sharkfw.peer.SharkEngine;
+import net.sharkfw.security.utility.LoggingUtil;
 import net.sharkfw.system.L;
 import net.sharkfw.system.SharkException;
 
@@ -33,13 +36,24 @@ import net.sharkfw.system.SharkException;
 public abstract class VersionKP extends KnowledgePort
 {
 
-    private final static Logger LOGGER = Logger.getLogger(VersionKP.class.getName());
-
     private final TimestampList timestampList;
 
+    /**
+     *
+     * @param sharkEngine
+     * @param syncKB
+     * @param context
+     *
+     * @throws IllegalArgumentException
+     * @throws IllegalStateException
+     */
     public VersionKP(final SharkEngine sharkEngine, final SyncKB syncKB, final SharkCS context)
     {
         super(sharkEngine, syncKB);
+        if (syncKB.getOwner() == null)
+        {
+            throw new IllegalArgumentException("Paratmeter of Type " + syncKB.getClass().getName() + " must have an owner set.");
+        }
         try
         {
             this.interest = InMemoSharkKB.createInMemoCopy(context);
@@ -74,6 +88,9 @@ public abstract class VersionKP extends KnowledgePort
     @Override
     protected void doInsert(final Knowledge knowledge, final KEPConnection kepConnection)
     {
+        final String knowledgeString = L.knowledge2String(knowledge);
+        final String ownerName = kb.getOwner().getName();
+        LoggingUtil.debugBox(ownerName + " received Knowledge for insert", knowledgeString, this);
         try
         {
             // Only do insert, wenn we are actually intereded in receiving Information.
@@ -90,9 +107,14 @@ public abstract class VersionKP extends KnowledgePort
                     final int remoteVersion = VersionUtils.getVersion(remoteContextPoint);
                     if (remoteVersion > localVersion)
                     {
+                        final String contextPointString = L.cp2String(remoteContextPoint);
+                        LoggingUtil.debugBox("Insert/Replace ContextPoint in KB of " + ownerName + ".", contextPointString, this);
                         VersionUtils.replaceContextPoint(remoteContextPoint, kb);
                     }
                 }
+            } else
+            {
+                L.d("Skipped insert due to KP intereded in receiving Information.", this);
             }
         } catch (SharkKBException ex)
         {
@@ -103,41 +125,64 @@ public abstract class VersionKP extends KnowledgePort
     @Override
     protected void doExpose(final SharkCS context, final KEPConnection kepConnection)
     {
-        L.d(kb.getOwner().getName() + " received interest:\n" + L.contextSpace2String(context), this);
+        final String ownerName = kb.getOwner().getName();
+        final String contextSpaceString = L.contextSpace2String(context);
+        LoggingUtil.debugBox(ownerName + " received interest and tries to collect Knowledge.", contextSpaceString, this);
         try
         {
             final PeerSemanticTag sender = kepConnection.getSender();
             final String[] peerAddresses = sender.getAddresses();
             final Date lastPeerMeeting = timestampList.getTimestamp(sender);
             final Knowledge knowledge = getOffer(lastPeerMeeting);
-            L.d(kb.getOwner().getName() + " sends Knowledge:\n" + L.knowledge2String(knowledge), this);
             kepConnection.insert(knowledge, peerAddresses);
             notifyInsertSent(this, knowledge);
             timestampList.resetTimestamp(sender);
         } catch (SharkException ex)
         {
             throw new IllegalStateException("Exception occurred in doExpose.", ex);
-        } 
+        }
     }
 
     private Knowledge getOffer(final Date lastPeerMeeting) throws SharkKBException
     {
         final Knowledge offer = getOffer();
+        LoggingUtil.debugBox("Knowledge from Offer.", L.knowledge2String(offer), this);
         final Enumeration<ContextPoint> offeredContextPoints = offer.contextPoints();
         while (offeredContextPoints.hasMoreElements())
         {
             final ContextPoint element = offeredContextPoints.nextElement();
             final String dateProperty = element.getProperty(SyncContextPoint.TIMESTAMP_PROPERTY_NAME);
-            if (dateProperty != null)
+            if (dateProperty == null)
+            {
+                L.d("Skipping ContextPoint, date property was not set.", this);
+            } else
             {
                 final long time = Long.parseLong(dateProperty);
                 final Date contextPointTimestamp = new Date(time);
-                if (contextPointTimestamp.after(lastPeerMeeting))
+                if (!contextPointTimestamp.after(lastPeerMeeting))
                 {
                     offer.removeContextPoint(element);
-                }
+                    printTimestampNotAfterDebugMessage(contextPointTimestamp, lastPeerMeeting);
+                } 
             }
         }
+        final String offerString = L.knowledge2String(offer);
+        LoggingUtil.debugBox("Filtered Knowledge.", offerString, this);
         return offer;
+    }
+
+    private void printTimestampNotAfterDebugMessage(final Date contextPointTimestamp, final Date lastPeerMeeting)
+    {
+        final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd G 'at' HH:mm:ss z", Locale.getDefault());
+        final String contextPointTimestampString = dateFormat.format(contextPointTimestamp);
+        final String lastPeerMeetingString = dateFormat.format(lastPeerMeeting);
+        L.d(
+                "Skipping ContextPoint, ContextPoint Timestamp ("
+                + contextPointTimestampString
+                + ") is not after last meeting of peer ("
+                + lastPeerMeetingString
+                + ").",
+                this
+        );
     }
 }
