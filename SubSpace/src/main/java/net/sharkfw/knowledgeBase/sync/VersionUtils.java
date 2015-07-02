@@ -18,7 +18,7 @@ import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 
 /**
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public final class VersionUtils
 {

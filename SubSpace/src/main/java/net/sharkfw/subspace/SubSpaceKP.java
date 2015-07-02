@@ -17,23 +17,22 @@ import net.sharkfw.system.L;
 
 /**
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public class SubSpaceKP extends VersionKP
 {
+    private final SubSpace subSpace;
 
-    public SubSpaceKP(final SharkEngine sharkEngine, final SharkCS context, final SyncKB syncKB)
+    public SubSpaceKP(final SharkEngine sharkEngine, final SubSpace subSpace)
     {
-        super(sharkEngine, syncKB, context);
+        super(sharkEngine, subSpace.getBase(), subSpace.getContext());
+        this.subSpace = subSpace;
     }
 
     @Override
     protected Knowledge getOffer() throws SharkKBException
     {
-        final Knowledge knowledge = SharkCSAlgebra.extract(kb, interest);
-        final String knowledgeString = L.knowledge2String(knowledge);
-        LoggingUtil.debugBox("Collected Knowledge.", knowledgeString, this);
-        return knowledge;
+        return subSpace.getKnowledge();
     }
 
 }

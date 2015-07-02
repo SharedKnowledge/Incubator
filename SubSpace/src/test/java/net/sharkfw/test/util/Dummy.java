@@ -7,7 +7,6 @@ package net.sharkfw.test.util;
 
 import net.sharkfw.knowledgeBase.PeerSTSet;
 import net.sharkfw.knowledgeBase.PeerSemanticTag;
-import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
@@ -17,7 +16,7 @@ import net.sharkfw.peer.SharkEngine;
 
 /**
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public class Dummy
 {

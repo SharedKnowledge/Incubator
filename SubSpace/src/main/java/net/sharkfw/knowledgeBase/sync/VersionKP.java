@@ -31,7 +31,7 @@ import net.sharkfw.system.SharkException;
 
 /**
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public abstract class VersionKP extends KnowledgePort
 {

@@ -20,6 +20,9 @@ import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.peer.KnowledgePort;
 import net.sharkfw.peer.SharkEngine;
+import net.sharkfw.security.utility.LoggingUtil;
+import net.sharkfw.subspace.StandardSubSpace;
+import net.sharkfw.subspace.SubSpace;
 import net.sharkfw.subspace.SubSpaceKP;
 import net.sharkfw.system.L;
 import net.sharkfw.system.SharkSecurityException;
@@ -30,7 +33,7 @@ import org.junit.Test;
 
 /**
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public class SubSpaceKPTests
 {
@@ -63,7 +66,7 @@ public class SubSpaceKPTests
 
         L.d("Alice: " + Arrays.toString(alice.getPeer().getAddresses()), this);
         L.d("Bob: " + Arrays.toString(bob.getPeer().getAddresses()), this);
-        
+
         //Add teapot to alcie
         final SemanticTag teapot = SEMANTIC_TAG_FACTORY.createSemanticTag("teapot", TEAPOT_SI);
         final ContextCoordinates teapotCC = aliceKB.createContextCoordinates(
@@ -105,12 +108,15 @@ public class SubSpaceKPTests
         final SharkCS aliceJavaCS = aliceKB.createInterest(aliceJavaCC);
 
         //KBs before sending
-        L.d(L.kb2String(aliceKB), this);
-        L.d(L.kb2String(bobKB), this);
-        
+        //L.d(L.kb2String(aliceKB), this);
+        //L.d(L.kb2String(bobKB), this);
+
+        //SubSpace
+        final SubSpace aliceJavaSubSpace = new StandardSubSpace(aliceKB, aliceJavaCS, java);
+        final SubSpace bobJavaSubSpace = new StandardSubSpace(bobKB, bobJavaCS, java);
         //KnowledgePorts
-        final SubSpaceKP aliceKP = new SubSpaceKP(aliceEngine, aliceJavaCS, aliceKB);
-        final SubSpaceKP bobKP = new SubSpaceKP(bobEngine, bobJavaCS, bobKB);
+        final SubSpaceKP aliceKP = new SubSpaceKP(aliceEngine, aliceJavaSubSpace);
+        final SubSpaceKP bobKP = new SubSpaceKP(bobEngine, bobJavaSubSpace);
 
         final List<KnowledgePort> alicePorts = Collections.list(aliceEngine.getKPs());
         final List<KnowledgePort> bobPorts = Collections.list(bobEngine.getKPs());
@@ -126,9 +132,18 @@ public class SubSpaceKPTests
         Assert.assertEquals(1, bobPorts.size());
         //bobEngine.stopTCP();
         //aliceEngine.stopTCP();
-        
+
         //KBs after sending
-        L.d(L.kb2String(aliceKB), this);
-        L.d(L.kb2String(bobKB), this);
+        //L.d(L.kb2String(aliceKB), this);
+        //L.d(L.kb2String(bobKB), this);
+
+        List<ContextPoint> points = Collections.list(aliceKB.getAllContextPoints());
+        Assert.assertEquals(2, points.size());
+
+        
+        LoggingUtil.debugBox("SubSpace Alice Knowledge", L.knowledge2String(aliceJavaSubSpace.getKnowledge()));
+        
+
+        //Assert.assertNotNull(contextPoint);
     }
 }
