@@ -1,0 +1,47 @@
+package addressExchanger;
+
+import net.sharkfw.knowledgeBase.*;
+import net.sharkfw.kp.KPListener;
+import net.sharkfw.peer.*;
+import net.sharkfw.system.L;
+
+
+/**	
+*	An AddressExchangerKPListener object represents a knowledge port listener for address exchange. 
+*	This class implements KPListener.
+*
+*	@implements KPListener
+*/
+public class AddressExchangerKPListener implements KPListener
+{
+	/**	
+	*	Prints the sent interest.
+	*
+	*	@param	kp 						the knowledge port
+	*
+	*	@return sentInterest 	the sent interest
+	*/
+	@Override
+	public void exposeSent(KnowledgePort kp, SharkCS sentInterest) 
+	{
+		System.out.println("Sent interest: " + L.contextSpace2String(sentInterest));
+	}
+
+	/**	
+	* Does nothing.
+	*/
+	@Override
+	public void insertSent(KnowledgePort kp, Knowledge sentKnowledge) 
+	{
+		
+	}
+
+	/**	
+	* Does nothing.
+	*/
+	@Override
+	public void knowledgeAssimilated(KnowledgePort kp, ContextPoint newCP) 
+	{
+
+	}
+}
