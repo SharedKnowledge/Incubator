@@ -99,9 +99,13 @@ public class SharkGPImport {
 	 * @throws SharkKBException the shark kb exception
 	 */
     private static PeerSemanticTag GPPeerSemanticTag(String name, String si, String address) throws SharkKBException {
+    	if(si == null) {
+    		si = "https://plus.google.com/";
+    	}
         PeerSemanticTag GPPST = null;
         if (name != null && si != null) {
-        	GPPST = knowledgeBase.getPeerSemanticTag(si);
+        	knowledgeBase.getPeerSemanticTag(name);
+        	//GPPST = knowledgeBase.getPeerSemanticTag(si);
 	        if (GPPST == null) {
 	        	GPPST = knowledgeBase.createPeerSemanticTag(name, si, address);
             }

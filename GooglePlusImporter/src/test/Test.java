@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.util.Map;
 
 import net.sharkfw.knowledgeBase.SharkKBException;
+import net.sharkfw.knowledgeBase.filesystem.FSSharkKB;
 import GooglePlus.GetDataGooglePlus;
 import SharkImport.SharkGPImport;
 
@@ -42,6 +43,8 @@ class Test {
 		Logger.getInstance().none("");
 
 		// Shark Google+ Import.
+		FSSharkKB gpKB = new FSSharkKB("googlePlusKB");
+		SharkGPImport sharkGPImportKB = new SharkGPImport(gpKB);
 		Logger.getInstance().none("_____ Shark Google+ Import Results _____");
 		SharkGPImport.sharkGPImport(true,googlePlusUID,googlePlusMaxResults);
 		Logger.getInstance().none("_______________________________");
