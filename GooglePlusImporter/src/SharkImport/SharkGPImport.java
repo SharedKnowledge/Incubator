@@ -104,8 +104,7 @@ public class SharkGPImport {
     	}
         PeerSemanticTag GPPST = null;
         if (name != null && si != null) {
-        	knowledgeBase.getPeerSemanticTag(name);
-        	//GPPST = knowledgeBase.getPeerSemanticTag(si);
+        	GPPST = knowledgeBase.getPeerSemanticTag(si);
 	        if (GPPST == null) {
 	        	GPPST = knowledgeBase.createPeerSemanticTag(name, si, address);
             }

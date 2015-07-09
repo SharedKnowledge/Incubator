@@ -20,7 +20,7 @@ class Test {
 	public static final String googlePlusUID = "115144293939158706064";
 	
 	/** How many Results should be shown. */
-	public static final String googlePlusMaxResults = "5";
+	public static final String googlePlusMaxResults = "2";
 	
 	/**
 	 * The main method.
