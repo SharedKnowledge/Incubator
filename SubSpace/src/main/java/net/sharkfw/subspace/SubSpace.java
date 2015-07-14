@@ -23,6 +23,5 @@ public interface SubSpace
     
     public SemanticTag getDescription();
     
-    public SharkCS getContext();
-    
+    public SharkCS getContext();    
 }
