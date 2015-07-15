@@ -20,10 +20,10 @@ import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.peer.KnowledgePort;
 import net.sharkfw.peer.SharkEngine;
-import net.sharkfw.security.utility.LoggingUtil;
-import net.sharkfw.subspace.StandardSubSpace;
-import net.sharkfw.subspace.SubSpace;
-import net.sharkfw.subspace.SubSpaceKP;
+import net.sharkfw.system.LoggingUtil;
+import net.sharkfw.subspace.knowledgeBase.StandardSubSpace;
+import net.sharkfw.subspace.knowledgeBase.SubSpace;
+import net.sharkfw.subspace.peer.SubSpaceKP;
 import net.sharkfw.system.L;
 import net.sharkfw.system.SharkSecurityException;
 import net.sharkfw.test.util.Dummy;
@@ -35,25 +35,8 @@ import org.junit.Test;
  *
  * @author Nitros Razril (pseudonym)
  */
-public class SubSpaceKPTests
+public class SubSpaceKPTests extends AbstractSubSpaceTest
 {
-
-    private static final String ALICE_NAME = "Alice";
-    private static final String ALICE_SI = "http://www.sharksystem.net/alice.html";
-    private static final String BOB_NAME = "Bob";
-    private static final String BOB_SI = "http://www.sharksystem.net/bob.html";
-
-    private static final String TEAPOT_SI = "https://en.wikipedia.org/?title=Teapot";
-    private static final String JAVA_SI = "https://www.java.com";
-
-    private static final STSet SEMANTIC_TAG_FACTORY = new InMemoPeerSTSet();
-
-    @BeforeClass
-    public static void setUpClass()
-    {
-        L.setLogLevel(L.LOGLEVEL_ALL);
-    }
-
     @Test
     public void simpleDataExchange() throws SharkKBException, SharkSecurityException, IOException, SharkProtocolNotSupportedException, InterruptedException
     {

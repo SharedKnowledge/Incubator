@@ -3,9 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package net.sharkfw.subspace;
+package net.sharkfw.subspace.knowledgeBase;
 
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
@@ -18,9 +17,6 @@ import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
-import net.sharkfw.knowledgeBase.inmemory.InMemoDynamicInterest;
-import net.sharkfw.knowledgeBase.inmemory.InMemoKnowledge;
-import net.sharkfw.knowledgeBase.inmemory.InMemoSharkCS;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 
 /**
@@ -38,7 +34,7 @@ public class StandardSubSpace implements SubSpace
      * {@link SemanticTag}. This flags the SemanticTag inside the
      * {@link #context} topic dimension as the description for this SubSpace.
      */
-    private static final String DESCRIPTION_PROPERTY = "__internal_DESCRIPTION_PROPERTY";
+    private static final String DESCRIPTION_PROPERTY = "net.sharkfw.subspace.StandardSubSpace#DESCRIPTION_PROPERTY";
     /**
      * Knowledgebase form wich the Content of this SubSpace is extracted from.
      */
@@ -211,9 +207,7 @@ public class StandardSubSpace implements SubSpace
         if (object instanceof SubSpace)
         {
             final SubSpace other = (SubSpace) object;
-            final SemanticTag description = getDescription();
-            final SemanticTag otherDescription = other.getDescription();
-            equals = description.identical(otherDescription);
+            equals = SubSpaceAlgebra.identical(this, other);
         }
         return equals;
     }

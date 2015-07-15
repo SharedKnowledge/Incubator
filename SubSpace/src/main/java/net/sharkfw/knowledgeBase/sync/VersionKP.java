@@ -25,7 +25,7 @@ import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.peer.KEPConnection;
 import net.sharkfw.peer.KnowledgePort;
 import net.sharkfw.peer.SharkEngine;
-import net.sharkfw.security.utility.LoggingUtil;
+import net.sharkfw.system.LoggingUtil;
 import net.sharkfw.system.L;
 import net.sharkfw.system.SharkException;
 

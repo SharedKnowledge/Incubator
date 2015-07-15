@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package net.sharkfw.security.utility;
+package net.sharkfw.system;
 
 import net.sharkfw.system.L;
 

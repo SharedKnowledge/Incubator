@@ -3,17 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package net.sharkfw.subspace;
+package net.sharkfw.subspace.peer;
 
+import net.sharkfw.subspace.knowledgeBase.SubSpace;
 import net.sharkfw.knowledgeBase.Knowledge;
-import net.sharkfw.knowledgeBase.SharkCS;
-import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
-import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.knowledgeBase.sync.VersionKP;
 import net.sharkfw.peer.SharkEngine;
-import net.sharkfw.security.utility.LoggingUtil;
-import net.sharkfw.system.L;
 
 /**
  *

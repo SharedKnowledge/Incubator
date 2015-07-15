@@ -4,8 +4,9 @@
  * and open the template in the editor.
  */
 
-package net.sharkfw.subspace;
+package net.sharkfw.subspace.knowledgeBase;
 
+import net.sharkfw.subspace.knowledgeBase.SubSpace;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkKB;
 
@@ -13,7 +14,7 @@ import net.sharkfw.knowledgeBase.SharkKB;
  *
  * @author jgrundma
  */
-public interface SubSpaceFactory
+public interface SubSpaceFactory<T extends SharkKB>
 {
-    public SubSpace createSubSpace(SemanticTag description, SharkKB base);
+    public SubSpace createSubSpace(SemanticTag description, T base);
 }

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-package net.sharkfw.subspace;
+package net.sharkfw.subspace.knowledgeBase;
 
 import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.SemanticTag;
@@ -23,5 +23,5 @@ public interface SubSpace
     
     public SemanticTag getDescription();
     
-    public SharkCS getContext();    
+    public SharkCS getContext();
 }
