@@ -12,11 +12,9 @@ import java.util.List;
 import net.sharkfw.kep.SharkProtocolNotSupportedException;
 import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.ContextPoint;
-import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKBException;
-import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.peer.KnowledgePort;
 import net.sharkfw.peer.SharkEngine;
@@ -28,7 +26,6 @@ import net.sharkfw.system.L;
 import net.sharkfw.system.SharkSecurityException;
 import net.sharkfw.test.util.Dummy;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -95,11 +92,11 @@ public class SubSpaceKPTests extends AbstractSubSpaceTest
         //L.d(L.kb2String(bobKB), this);
 
         //SubSpace
-        final SubSpace aliceJavaSubSpace = new StandardSubSpace(aliceKB, aliceJavaCS, java);
-        final SubSpace bobJavaSubSpace = new StandardSubSpace(bobKB, bobJavaCS, java);
+        final SubSpace aliceJavaSubSpace = new StandardSubSpace(aliceJavaCS, java);
+        final SubSpace bobJavaSubSpace = new StandardSubSpace(bobJavaCS, java);
         //KnowledgePorts
-        final SubSpaceKP aliceKP = new SubSpaceKP(aliceEngine, aliceJavaSubSpace);
-        final SubSpaceKP bobKP = new SubSpaceKP(bobEngine, bobJavaSubSpace);
+        final SubSpaceKP aliceKP = new SubSpaceKP(aliceEngine, aliceJavaSubSpace, aliceKB);
+        final SubSpaceKP bobKP = new SubSpaceKP(bobEngine, bobJavaSubSpace, bobKB);
 
         final List<KnowledgePort> alicePorts = Collections.list(aliceEngine.getKPs());
         final List<KnowledgePort> bobPorts = Collections.list(bobEngine.getKPs());
@@ -124,7 +121,7 @@ public class SubSpaceKPTests extends AbstractSubSpaceTest
         Assert.assertEquals(2, points.size());
 
         
-        LoggingUtil.debugBox("SubSpace Alice Knowledge", L.knowledge2String(aliceJavaSubSpace.getKnowledge()));
+        LoggingUtil.debugBox("SubSpace Alice Knowledge", L.knowledge2String(aliceJavaSubSpace.getKnowledge(aliceKB)));
         
 
         //Assert.assertNotNull(contextPoint);

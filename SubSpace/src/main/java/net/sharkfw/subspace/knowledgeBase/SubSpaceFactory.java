@@ -3,18 +3,17 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package net.sharkfw.subspace.knowledgeBase;
 
-import net.sharkfw.subspace.knowledgeBase.SubSpace;
 import net.sharkfw.knowledgeBase.SemanticTag;
-import net.sharkfw.knowledgeBase.SharkKB;
+import net.sharkfw.knowledgeBase.SharkCS;
 
 /**
- *
+ * 
  * @author jgrundma
  */
-public interface SubSpaceFactory<T extends SharkKB>
+public interface SubSpaceFactory
 {
-    public SubSpace createSubSpace(SemanticTag description, T base);
+
+    public SubSpace createSubSpace(SemanticTag description, SharkCS context);
 }

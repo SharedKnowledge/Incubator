@@ -5,34 +5,26 @@
  */
 package net.sharkfw.test.subspace;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.sun.xml.internal.ws.util.pipe.StandalonePipeAssembler;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.scene.SubScene;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.annotation.XmlElements;
-import net.sharkfw.kep.format.XMLSerializer;
 import net.sharkfw.knowledgeBase.ContextCoordinates;
-import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
-import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.filesystem.FSSharkKB;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.subspace.knowledgeBase.StandardSubSpace;
 import net.sharkfw.subspace.knowledgeBase.SubSpace;
-import net.sharkfw.subspace.knowledgeBase.SubSpaceAlgebra;
-import net.sharkfw.subspace.knowledgeBase.SubSpaceFactory;
+import net.sharkfw.xml.jaxb.JAXBSerializer;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -43,25 +35,57 @@ import org.junit.Test;
 public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
 {
 
-    private static final String TEST_DIRECTORY = System.getProperty("user.home") + "/__tmp_shark_test_kb";
+    private static final String TEST_DIRECTORY = System.getProperty("user.home") + File.separator + "__tmp_shark_test_kb";
 
-    private static class StandardSubSpaceFactory implements SubSpaceFactory<SyncKB>
+//    private static class StandardSubSpaceFactory implements SubSpaceFactory<SyncKB>
+//    {
+//
+//        private final SharkCS context;
+//
+//        public StandardSubSpaceFactory(final SharkCS context)
+//        {
+//            this.context = context;
+//        }
+//
+//        @Override
+//        public SubSpace createSubSpace(final SemanticTag description, final SyncKB base)
+//        {
+//            return new StandardSubSpace(base, context, description);
+//        }
+//    }
+    private static final SimpleFileVisitor DELETE_VISITOR = new SimpleFileVisitor<Path>()
     {
 
-        private final SharkCS context;
-
-        public StandardSubSpaceFactory(final SharkCS context)
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException
         {
-            this.context = context;
+            Files.delete(file);
+            return FileVisitResult.CONTINUE;
         }
 
         @Override
-        public SubSpace createSubSpace(final SemanticTag description, final SyncKB base)
+        public FileVisitResult visitFileFailed(Path file, IOException ex) throws IOException
         {
-            return new StandardSubSpace(base, context, description);
+            // try to delete the file anyway, even if its attributes
+            // could not be read, since delete-only access is theoretically possible
+            Files.delete(file);
+            return FileVisitResult.CONTINUE;
         }
 
-    }
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException ex) throws IOException
+        {
+            if (ex == null)
+            {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            } else
+            {
+                // directory iteration failed; propagate exception
+                throw ex;
+            }
+        }
+    };
 
     @BeforeClass
     public static void setUpClass()
@@ -79,19 +103,18 @@ public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
     }
 
     @AfterClass
-    public static void tearDownClass()
+    public static void tearDownClass() throws IOException
     {
-        System.out.println("Hello word 1");
         final File file = new File(TEST_DIRECTORY);
         if (file.exists() && file.isDirectory())
         {
-            file.delete();
+            final Path path = file.toPath();
+            Files.walkFileTree(path, DELETE_VISITOR);
         }
-         System.out.println("Hello word 2");
     }
 
     @Test
-    public void assimilateAndExtractionTest() throws SharkKBException, JsonProcessingException, IOException
+    public void assimilateAndExtractionTest() throws SharkKBException, IOException, JAXBException
     {
         final List<SubSpace> subspaces = new ArrayList<>();
         final FSSharkKB knowledgeBase = new FSSharkKB(TEST_DIRECTORY);
@@ -106,7 +129,7 @@ public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
                 null,
                 SharkCS.DIRECTION_NOTHING
         );
-        final SubSpace javaSS = new StandardSubSpace(syncKnowledgeBase, javaCC, java);
+        final SubSpace javaSS = new StandardSubSpace(javaCC, java);
         subspaces.add(javaSS);
         final SemanticTag teapot = SEMANTIC_TAG_FACTORY.createSemanticTag(TEAPOT_NAME, TEAPOT_SI);
         final ContextCoordinates teaportCC = CONTEX_FACTORY.createContextCoordinates(
@@ -118,19 +141,21 @@ public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
                 null,
                 SharkCS.DIRECTION_NOTHING
         );
-        final SubSpace teapotSS = new StandardSubSpace(syncKnowledgeBase, teaportCC, teapot);
+        final SubSpace teapotSS = new StandardSubSpace(teaportCC, teapot);
         subspaces.add(teapotSS);
 
-        List<String> stuff = new ArrayList();
-        XMLSerializer serializer = new XMLSerializer();
-        stuff.add(serializer.serializeSharkCS(javaSS.getContext()));
-        stuff.add(serializer.serializeSharkCS(teapotSS.getContext()));
-
-        ObjectMapper mapper = new ObjectMapper();
-        String string = mapper.writeValueAsString(stuff);
-        List<String> stringlist = mapper.readValue(string, mapper.getTypeFactory().constructCollectionType(List.class, String.class));
-        System.out.println(string);
-        System.out.println(stringlist);
+        final JAXBSerializer serializer = JAXBSerializer.INSTANCE;
+        final String javaXml = serializer.serializeSubSpace(javaSS);
+        System.out.println("JavaSS XML:");
+        System.out.println(javaXml);
+        
+        final String teapotXml = serializer.serializeSubSpace(teapotSS);
+        System.out.println("TeapotSS XML:");
+        System.out.println(teapotXml);
+        
+        final String listXml = serializer.serializeSubSpaceList(subspaces);
+        System.out.println("List XML:");
+        System.out.println(listXml);
         
 
         //assimilateSubTest(syncKnowledgeBase, subspaces);

@@ -16,6 +16,7 @@ import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
+import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 
@@ -36,17 +37,12 @@ public class StandardSubSpace implements SubSpace
      */
     private static final String DESCRIPTION_PROPERTY = "net.sharkfw.subspace.StandardSubSpace#DESCRIPTION_PROPERTY";
     /**
-     * Knowledgebase form wich the Content of this SubSpace is extracted from.
-     */
-    private final SyncKB base;
-    /**
      * Context that descripts this SubSpace
      */
     private final SharkCS context;
 
-    public StandardSubSpace(final SyncKB base, final SharkCS context, final SemanticTag description)
+    public StandardSubSpace(final SharkCS context, final SemanticTag description)
     {
-        this.base = base;
         this.context = context;
         try
         {
@@ -55,17 +51,6 @@ public class StandardSubSpace implements SubSpace
         {
             throw new IllegalStateException("Could not initialize " + getClass().getName() + " due to Exception occurring.", ex);
         }
-    }
-
-    /**
-     * Returns {@link #base}
-     *
-     * @return The base of this SubSpace.
-     */
-    @Override
-    public SyncKB getBase()
-    {
-        return base;
     }
 
     /**
@@ -89,7 +74,7 @@ public class StandardSubSpace implements SubSpace
      */
     //TODO. Implement better...
     @Override
-    public Knowledge getKnowledge()
+    public Knowledge getKnowledge(final SharkKB base)
     {
         Knowledge knowledge = null;
         try
@@ -191,14 +176,15 @@ public class StandardSubSpace implements SubSpace
      * <ol>
      * <li>The given object is an instance of {@link SubSpace}.</li>
      * <li>
-     * Its description ({@link SubSpace#getDescription()}) is identical
-     * to this objects description as in 
+     * Its description ({@link SubSpace#getDescription()}) is identical to this
+     * objects description as in
      * {@link SemanticTag#identical(net.sharkfw.knowledgeBase.SemanticTag)}.#
      * </li>
      * </ol>
-     * 
+     *
      * @param object The object to test.
-     * @return True if the given objects equals this object, as descripted above.
+     * @return True if the given objects equals this object, as descripted
+     * above.
      */
     @Override
     public boolean equals(final Object object)
@@ -207,14 +193,16 @@ public class StandardSubSpace implements SubSpace
         if (object instanceof SubSpace)
         {
             final SubSpace other = (SubSpace) object;
-            equals = SubSpaceAlgebra.identical(this, other);
+            final SemanticTag firstSubSpaceDescription = this.getDescription();
+            final SemanticTag secondSubSpaceDescription = other.getDescription();
+            equals = firstSubSpaceDescription.identical(secondSubSpaceDescription);
         }
         return equals;
     }
 
     /**
      * Generates the hash code for this class.
-     * 
+     *
      * @return Hash code for this class.
      */
     @Override
