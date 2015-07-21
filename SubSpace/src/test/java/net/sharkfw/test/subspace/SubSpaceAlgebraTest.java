@@ -14,6 +14,8 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.filesystem.FSSharkKB;
@@ -77,6 +79,8 @@ public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
     {
         this.subspaces = new ArrayList<>();
         final FSSharkKB knowledgeBase = new FSSharkKB(TEST_DIRECTORY);
+        //This should clear all data
+        knowledgeBase.setProperty(SubSpaceAlgebra.SUBSPACES_PROPERTY, null);
         this.javaSS = SubSpaceDummyFactory.createSimpleSubSpace(ALICE_NAME, ALICE_SI);
         subspaces.add(javaSS);
         this.teapotSS = SubSpaceDummyFactory.createSimpleSubSpace(BOB_NAME, BOB_SI);
@@ -113,7 +117,7 @@ public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
     }
 
     @Test
-    public void assimilateAndExtractionTest() throws SharkKBException, JAXBException
+    public void persistenceTest() throws SharkKBException, JAXBException
     {
         final FSSharkKB knowledgeBase = new FSSharkKB(TEST_DIRECTORY);
         final SubSpaceAlgebra algebra = new SubSpaceAlgebra(factory, knowledgeBase);
@@ -130,5 +134,42 @@ public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
         {
             Assert.assertTrue(subspaces.contains(extractedSubSpace));
         }
+    }
+
+    @Test
+    public void removeAndAddTest() throws SharkKBException, JAXBException
+    {
+        final FSSharkKB knowledgeBase = new FSSharkKB(TEST_DIRECTORY);
+        final SubSpaceAlgebra algebra = new SubSpaceAlgebra(factory, knowledgeBase);
+
+        algebra.removeSubSpace(javaSS);
+        final List<SubSpace> javaSSRemovedSubSpaces = algebra.extractSubSpaces();
+        Assert.assertTrue(!javaSSRemovedSubSpaces.contains(javaSS));
+        Assert.assertTrue(javaSSRemovedSubSpaces.contains(teapotSS));
+        Assert.assertEquals(javaSSRemovedSubSpaces.size(), subspaces.size() - 1);
+
+        algebra.assimilateSubSpace(javaSS);
+        final List<SubSpace> javaSSAddedSubSpaces = algebra.extractSubSpaces();
+        Assert.assertEquals(javaSSAddedSubSpaces.size(), subspaces.size());
+        Assert.assertTrue(javaSSAddedSubSpaces.contains(javaSS));
+        Assert.assertTrue(javaSSAddedSubSpaces.contains(teapotSS));
+        for (SubSpace subSpace : subspaces)
+        {
+            Assert.assertTrue(javaSSAddedSubSpaces.contains(subSpace));
+        }
+        for (SubSpace extractedSubSpace : javaSSAddedSubSpaces)
+        {
+            Assert.assertTrue(subspaces.contains(extractedSubSpace));
+        }
+    }
+
+    @Test
+    public void clearTest() throws SharkKBException, JAXBException
+    {
+        final FSSharkKB knowledgeBase = new FSSharkKB(TEST_DIRECTORY);
+        final SubSpaceAlgebra algebra = new SubSpaceAlgebra(factory, knowledgeBase);
+        algebra.clearSubSpaces();
+        final List<SubSpace> clearedSubSpaces = algebra.extractSubSpaces();
+        Assert.assertTrue(clearedSubSpaces.isEmpty());
     }
 }

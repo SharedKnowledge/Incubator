@@ -12,6 +12,7 @@ import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
+import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.subspace.knowledgeBase.StandardSubSpace;
 import net.sharkfw.subspace.knowledgeBase.SubSpace;
@@ -23,9 +24,6 @@ import net.sharkfw.subspace.knowledgeBase.SubSpaceFactory;
  */
 public final class SubSpaceDummyFactory
 {
-
-    private static final STSet SEMANTIC_TAG_FACTORY = new InMemoPeerSTSet();
-    private static final SharkKB CONTEX_FACTORY = new InMemoSharkKB();
 
     private static class StandardSubSpaceFactory implements SubSpaceFactory
     {
@@ -43,8 +41,8 @@ public final class SubSpaceDummyFactory
 
     public static SubSpace createSimpleSubSpace(final String name, final String subjectIdentifier) throws SharkKBException
     {
-        final SemanticTag topic = SEMANTIC_TAG_FACTORY.createSemanticTag(name, subjectIdentifier);
-        final ContextCoordinates contextCoordinates = CONTEX_FACTORY.createContextCoordinates(
+        final SemanticTag topic = new InMemoSTSet().createSemanticTag(name, subjectIdentifier);
+        final ContextCoordinates contextCoordinates = new InMemoSharkKB().createContextCoordinates(
                 topic,
                 null,
                 null,

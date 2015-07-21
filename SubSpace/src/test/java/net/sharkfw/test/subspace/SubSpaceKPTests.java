@@ -15,6 +15,7 @@ import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKBException;
+import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.peer.KnowledgePort;
 import net.sharkfw.peer.SharkEngine;
@@ -48,7 +49,7 @@ public class SubSpaceKPTests extends AbstractSubSpaceTest
         L.d("Bob: " + Arrays.toString(bob.getPeer().getAddresses()), this);
 
         //Add teapot to alcie
-        final SemanticTag teapot = SEMANTIC_TAG_FACTORY.createSemanticTag("teapot", TEAPOT_SI);
+        final SemanticTag teapot = new InMemoSTSet().createSemanticTag("teapot", TEAPOT_SI);
         final ContextCoordinates teapotCC = aliceKB.createContextCoordinates(
                 teapot,
                 null,
@@ -60,7 +61,7 @@ public class SubSpaceKPTests extends AbstractSubSpaceTest
         );
         final ContextPoint teapotCP = aliceKB.createContextPoint(teapotCC);
         teapotCP.addInformation("Teapots can be very pretty.");
-        final SemanticTag java = SEMANTIC_TAG_FACTORY.createSemanticTag("java", JAVA_SI);
+        final SemanticTag java = new InMemoSTSet().createSemanticTag("java", JAVA_SI);
         //Bobs Java
         final ContextCoordinates bobJavaCC = bobKB.createContextCoordinates(
                 java,

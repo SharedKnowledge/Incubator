@@ -18,7 +18,6 @@ import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
-import net.sharkfw.knowledgeBase.sync.SyncKB;
 
 /**
  * This is a simple standard implementation of the {@link SubSpace}. It holds

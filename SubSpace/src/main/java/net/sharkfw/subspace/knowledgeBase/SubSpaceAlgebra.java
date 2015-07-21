@@ -73,6 +73,11 @@ public final class SubSpaceAlgebra
         return removed;
     }
 
+    public void clearSubSpaces() throws SharkKBException
+    {
+        knowledgeBase.setProperty(SUBSPACES_PROPERTY, null);
+    }
+
     private void setSubSpaces(final List<SubSpace> list) throws SharkKBException, JAXBException
     {
         final JAXBSerializer serializer = JAXBSerializer.INSTANCE;

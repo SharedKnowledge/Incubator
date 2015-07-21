@@ -5,8 +5,6 @@
  */
 package net.sharkfw.system;
 
-import net.sharkfw.system.L;
-
 /**
  *
  * @author Nitros Razril (pseudonym)
