@@ -14,7 +14,7 @@ import net.sharkfw.knowledgeBase.SharkCS;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 @XmlRootElement(name = "subspace")
 @XmlAccessorType(XmlAccessType.FIELD)

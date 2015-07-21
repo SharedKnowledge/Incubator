@@ -8,84 +8,75 @@ package net.sharkfw.subspace.knowledgeBase;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
-import net.sharkfw.kep.format.XMLSerializer;
-import net.sharkfw.knowledgeBase.STSet;
-import net.sharkfw.knowledgeBase.SemanticTag;
+import javax.xml.bind.JAXBException;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
-import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
+import net.sharkfw.xml.jaxb.JAXBSerializer;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
-public final class SubSpaceAlgebra<T extends SharkKB>
+public final class SubSpaceAlgebra
 {
 
-    private static final String SUBSPACES_PROPERTY = "net.sharkfw.subspace.SubSpaceAlgebra#SUBSPACES_PROPERTY";
+    public static final String SUBSPACES_PROPERTY = "net.sharkfw.subspace.SubSpaceAlgebra#SUBSPACES_PROPERTY";
 
-    public static boolean identical(final SubSpace firstSubSpace, final SubSpace secondSubSpace)
+    private final SubSpaceFactory factory;
+    private final SharkKB knowledgeBase;
+
+    public SubSpaceAlgebra(final SubSpaceFactory factory, final SharkKB knowledgeBase)
     {
-        final SemanticTag firstSubSpaceDescription = firstSubSpace.getDescription();
-        final SemanticTag secondSubSpaceDescription = secondSubSpace.getDescription();
-        return firstSubSpaceDescription.identical(secondSubSpaceDescription);
+        this.factory = factory;
+        this.knowledgeBase = knowledgeBase;
     }
 
-//    public List<SubSpace> extractSubSpaces(final SubSpaceFactory<T> factory, final T knowledgeBase) throws SharkKBException
-//    {
-//        final List<SubSpace> extractedSubSpaces = new ArrayList<>();
-//        final STSet deserializedSubspaceDescriptions = extractSubspaceDescriptions(knowledgeBase);
-//        final Enumeration<SemanticTag> subspaceDescriptions = deserializedSubspaceDescriptions.tags();
-//        while (subspaceDescriptions.hasMoreElements())
-//        {
-//            final SemanticTag description = subspaceDescriptions.nextElement();
-//            final SubSpace subSpace = factory.createSubSpace(description, knowledgeBase);
-//            extractedSubSpaces.add(subSpace);
-//        }
-//        return extractedSubSpaces;
-//    }
-//
-//    public void assimilateSubSpace(final Collection<SubSpace> subSpaces, final T knowledgeBase) throws SharkKBException
-//    {
-//        final STSet subspaceDescriptions = extractSubspaceDescriptions(knowledgeBase);
-//        for (SubSpace subSpace : subSpaces)
-//        {
-//            final SemanticTag description = subSpace.getDescription();
-//            subspaceDescriptions.merge(description);
-//        }
-//        setSubspaceDescriptions(subspaceDescriptions, knowledgeBase);
-//    }
-//
-//    public void assimilateSubSpace(final SubSpace subSpaces, final T knowledgeBase) throws SharkKBException
-//    {
-//        final Set<SubSpace> singelton = Collections.singleton(subSpaces);
-//        assimilateSubSpace(singelton, knowledgeBase);
-//    }
-//
-//    public void removeSubSpace(final SemanticTag description, final T knowledgeBase) throws SharkKBException
-//    {
-//        STSet subspaceDescriptions = extractSubspaceDescriptions(knowledgeBase);
-//        subspaceDescriptions.removeSemanticTag(description);
-//        setSubspaceDescriptions(subspaceDescriptions, knowledgeBase);
-//    }
-//
-//    public STSet extractSubspaceDescriptions(final T knowledgeBase) throws SharkKBException
-//    {
-//        final String subspacesProperty = knowledgeBase.getProperty(SUBSPACES_PROPERTY);
-//        final XMLSerializer serializer = new XMLSerializer();
-//        serializer.deserializeSharkCS(subspacesProperty)
-//        final STSet deserializedSubspaceDescriptions = new InMemoSTSet();
-//        serializer.deserializeSTSet(deserializedSubspaceDescriptions, subspacesProperty);
-//        return deserializedSubspaceDescriptions;
-//    }
-//
-//    private void setSubspaceDescriptions(final STSet descriptions, final T knowledgeBase) throws SharkKBException
-//    {
-//        final XMLSerializer serializer = new XMLSerializer();
-//        final String serializedSubspaceDescriptions = serializer.serializeSTSet(descriptions);
-//        knowledgeBase.setProperty(SUBSPACES_PROPERTY, serializedSubspaceDescriptions);
-//    }
+    public List<SubSpace> extractSubSpaces() throws SharkKBException, JAXBException
+    {
+        List<SubSpace> subSpaces = new ArrayList<>();
+        final String subspaceListXml = knowledgeBase.getProperty(SUBSPACES_PROPERTY);
+        if (subspaceListXml != null)
+        {
+            final JAXBSerializer serializer = JAXBSerializer.INSTANCE;
+            subSpaces = serializer.deserializeSubSpaceList(subspaceListXml, factory);
+        }
+        return subSpaces;
+    }
+
+    public List<SubSpace> assimilateSubSpace(final Collection<SubSpace> subSpaces) throws SharkKBException, JAXBException
+    {
+        final List<SubSpace> savedSpaces = extractSubSpaces();
+        for (SubSpace subSpace : subSpaces)
+        {
+            if (!savedSpaces.contains(subSpace))
+            {
+                savedSpaces.add(subSpace);
+            }
+        }
+        setSubSpaces(savedSpaces);
+        return savedSpaces;
+    }
+
+    public void assimilateSubSpace(final SubSpace subSpaces) throws SharkKBException, JAXBException
+    {
+        final Set<SubSpace> singelton = Collections.singleton(subSpaces);
+        assimilateSubSpace(singelton);
+    }
+
+    public boolean removeSubSpace(final SubSpace subSpace) throws SharkKBException, JAXBException
+    {
+        final List<SubSpace> savedSpaces = extractSubSpaces();
+        final boolean removed = savedSpaces.remove(subSpace);
+        setSubSpaces(savedSpaces);
+        return removed;
+    }
+
+    private void setSubSpaces(final List<SubSpace> list) throws SharkKBException, JAXBException
+    {
+        final JAXBSerializer serializer = JAXBSerializer.INSTANCE;
+        final String xml = serializer.serializeSubSpaceList(list);
+        knowledgeBase.setProperty(SUBSPACES_PROPERTY, xml);
+    }
 }

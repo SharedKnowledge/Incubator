@@ -19,21 +19,22 @@ import net.sharkfw.subspace.knowledgeBase.SubSpaceFactory;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 public final class SubSpaceDummyFactory
 {
+
     private static final STSet SEMANTIC_TAG_FACTORY = new InMemoPeerSTSet();
     private static final SharkKB CONTEX_FACTORY = new InMemoSharkKB();
-    
-    private static class StandardSubSpaceFactory implements SubSpaceFactory {
+
+    private static class StandardSubSpaceFactory implements SubSpaceFactory
+    {
 
         @Override
         public SubSpace createSubSpace(final SemanticTag description, final SharkCS context)
         {
             return new StandardSubSpace(context, description);
         }
-        
     }
 
     private SubSpaceDummyFactory()
@@ -54,8 +55,9 @@ public final class SubSpaceDummyFactory
         );
         return new StandardSubSpace(contextCoordinates, topic);
     }
-    
-    public static SubSpaceFactory getStandardSubSpaceFactory(){
+
+    public static SubSpaceFactory getStandardSubSpaceFactory()
+    {
         return new StandardSubSpaceFactory();
     }
 }

@@ -12,9 +12,9 @@ import net.sharkfw.knowledgeBase.SharkKBException;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
-class SharkCSAdapter extends XmlAdapter<String, SharkCS>
+public class SharkCSAdapter extends XmlAdapter<String, SharkCS>
 {
     @Override
     public SharkCS unmarshal(final String xml) throws SharkKBException

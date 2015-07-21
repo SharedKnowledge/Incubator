@@ -8,19 +8,16 @@ package net.sharkfw.xml.jaxb;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
-import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.subspace.knowledgeBase.SubSpace;
 import net.sharkfw.subspace.knowledgeBase.SubSpaceFactory;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 public enum JAXBSerializer
 {

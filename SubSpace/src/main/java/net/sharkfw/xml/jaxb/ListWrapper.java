@@ -6,7 +6,6 @@
 package net.sharkfw.xml.jaxb;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -15,7 +14,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 @XmlRootElement(name = "list")
 @XmlAccessorType(XmlAccessType.FIELD)

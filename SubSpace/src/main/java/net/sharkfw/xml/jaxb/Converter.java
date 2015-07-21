@@ -9,13 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
-import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.subspace.knowledgeBase.SubSpace;
 import net.sharkfw.subspace.knowledgeBase.SubSpaceFactory;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 final class Converter
 {

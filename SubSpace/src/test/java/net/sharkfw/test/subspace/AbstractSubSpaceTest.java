@@ -13,7 +13,7 @@ import net.sharkfw.system.L;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 public abstract class AbstractSubSpaceTest
 {

@@ -14,9 +14,9 @@ import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
-class SemanticTagAdapter extends XmlAdapter<String, SemanticTag>
+public class SemanticTagAdapter extends XmlAdapter<String, SemanticTag> 
 {
 
     @Override

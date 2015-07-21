@@ -19,7 +19,7 @@ import org.junit.Test;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 public class SubSpaceSerializationTest extends AbstractSubSpaceTest
 {
@@ -38,6 +38,10 @@ public class SubSpaceSerializationTest extends AbstractSubSpaceTest
         final String javaXml = serializer.serializeSubSpace(javaSS);
         final String teapotXml = serializer.serializeSubSpace(teapotSS);
         final String listXml = serializer.serializeSubSpaceList(subspaces);
+        
+        System.out.println(javaXml);
+        System.out.println(teapotXml);
+        System.out.println(listXml);
 
         final SubSpace deserializedJavaSS = serializer.deserializeSubSpace(javaXml, factory);
         final SubSpace deserializedTeapotSS = serializer.deserializeSubSpace(teapotXml, factory);

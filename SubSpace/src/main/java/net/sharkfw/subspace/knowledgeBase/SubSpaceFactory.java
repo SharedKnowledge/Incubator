@@ -10,7 +10,7 @@ import net.sharkfw.knowledgeBase.SharkCS;
 
 /**
  * 
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 public interface SubSpaceFactory
 {

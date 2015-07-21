@@ -15,47 +15,33 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.JAXBException;
-import net.sharkfw.knowledgeBase.ContextCoordinates;
-import net.sharkfw.knowledgeBase.SemanticTag;
-import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.filesystem.FSSharkKB;
-import net.sharkfw.knowledgeBase.sync.SyncKB;
-import net.sharkfw.subspace.knowledgeBase.StandardSubSpace;
 import net.sharkfw.subspace.knowledgeBase.SubSpace;
-import net.sharkfw.xml.jaxb.JAXBSerializer;
+import net.sharkfw.subspace.knowledgeBase.SubSpaceAlgebra;
+import net.sharkfw.subspace.knowledgeBase.SubSpaceFactory;
+import net.sharkfw.test.util.SubSpaceDummyFactory;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
  *
- * @author jgrundma
+ * @author Nitros Razril (pseudonym)
  */
 public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
 {
 
     private static final String TEST_DIRECTORY = System.getProperty("user.home") + File.separator + "__tmp_shark_test_kb";
 
-//    private static class StandardSubSpaceFactory implements SubSpaceFactory<SyncKB>
-//    {
-//
-//        private final SharkCS context;
-//
-//        public StandardSubSpaceFactory(final SharkCS context)
-//        {
-//            this.context = context;
-//        }
-//
-//        @Override
-//        public SubSpace createSubSpace(final SemanticTag description, final SyncKB base)
-//        {
-//            return new StandardSubSpace(base, context, description);
-//        }
-//    }
+    private final SubSpace javaSS;
+    private final SubSpace teapotSS;
+    private final List<SubSpace> subspaces;
+    private final SubSpaceFactory factory;
+
     private static final SimpleFileVisitor DELETE_VISITOR = new SimpleFileVisitor<Path>()
     {
-
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) throws IOException
         {
@@ -87,6 +73,19 @@ public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
         }
     };
 
+    public SubSpaceAlgebraTest() throws SharkKBException, JAXBException
+    {
+        this.subspaces = new ArrayList<>();
+        final FSSharkKB knowledgeBase = new FSSharkKB(TEST_DIRECTORY);
+        this.javaSS = SubSpaceDummyFactory.createSimpleSubSpace(ALICE_NAME, ALICE_SI);
+        subspaces.add(javaSS);
+        this.teapotSS = SubSpaceDummyFactory.createSimpleSubSpace(BOB_NAME, BOB_SI);
+        subspaces.add(teapotSS);
+        this.factory = SubSpaceDummyFactory.getStandardSubSpaceFactory();
+        final SubSpaceAlgebra algebra = new SubSpaceAlgebra(factory, knowledgeBase);
+        algebra.assimilateSubSpace(subspaces);
+    }
+
     @BeforeClass
     public static void setUpClass()
     {
@@ -114,74 +113,22 @@ public class SubSpaceAlgebraTest extends AbstractSubSpaceTest
     }
 
     @Test
-    public void assimilateAndExtractionTest() throws SharkKBException, IOException, JAXBException
+    public void assimilateAndExtractionTest() throws SharkKBException, JAXBException
     {
-        final List<SubSpace> subspaces = new ArrayList<>();
         final FSSharkKB knowledgeBase = new FSSharkKB(TEST_DIRECTORY);
-        final SyncKB syncKnowledgeBase = new SyncKB(knowledgeBase);
-        final SemanticTag java = SEMANTIC_TAG_FACTORY.createSemanticTag(JAVA_NAME, JAVA_SI);
-        final ContextCoordinates javaCC = CONTEX_FACTORY.createContextCoordinates(
-                java,
-                null,
-                null,
-                null,
-                null,
-                null,
-                SharkCS.DIRECTION_NOTHING
-        );
-        final SubSpace javaSS = new StandardSubSpace(javaCC, java);
-        subspaces.add(javaSS);
-        final SemanticTag teapot = SEMANTIC_TAG_FACTORY.createSemanticTag(TEAPOT_NAME, TEAPOT_SI);
-        final ContextCoordinates teaportCC = CONTEX_FACTORY.createContextCoordinates(
-                teapot,
-                null,
-                null,
-                null,
-                null,
-                null,
-                SharkCS.DIRECTION_NOTHING
-        );
-        final SubSpace teapotSS = new StandardSubSpace(teaportCC, teapot);
-        subspaces.add(teapotSS);
+        final SubSpaceAlgebra algebra = new SubSpaceAlgebra(factory, knowledgeBase);
+        final List<SubSpace> extractedSubSpaces = algebra.extractSubSpaces();
 
-        final JAXBSerializer serializer = JAXBSerializer.INSTANCE;
-        final String javaXml = serializer.serializeSubSpace(javaSS);
-        System.out.println("JavaSS XML:");
-        System.out.println(javaXml);
-        
-        final String teapotXml = serializer.serializeSubSpace(teapotSS);
-        System.out.println("TeapotSS XML:");
-        System.out.println(teapotXml);
-        
-        final String listXml = serializer.serializeSubSpaceList(subspaces);
-        System.out.println("List XML:");
-        System.out.println(listXml);
-        
-
-        //assimilateSubTest(syncKnowledgeBase, subspaces);
-        //extractionSubTest(subspaces);
+        Assert.assertEquals(extractedSubSpaces.size(), subspaces.size());
+        Assert.assertTrue(extractedSubSpaces.contains(javaSS));
+        Assert.assertTrue(extractedSubSpaces.contains(teapotSS));
+        for (SubSpace subSpace : subspaces)
+        {
+            Assert.assertTrue(extractedSubSpaces.contains(subSpace));
+        }
+        for (SubSpace extractedSubSpace : extractedSubSpaces)
+        {
+            Assert.assertTrue(subspaces.contains(extractedSubSpace));
+        }
     }
-
-//    private void assimilateSubTest(final SyncKB syncKnowledgeBase, final List<SubSpace> subspaces) throws SharkKBException
-//    {
-//        SubSpaceAlgebra<SyncKB> algebra = new SubSpaceAlgebra<>();
-//        for (final SubSpace subSpace : subspaces)
-//        {
-//            algebra.assimilateSubSpace(subSpace, syncKnowledgeBase);
-//        }
-//        StandardSubSpaceFactory factory = new StandardSubSpaceFactory(null);
-//        
-//    }
-//
-//    private void extractionSubTest(final List<SubSpace> subspaces) throws SharkKBException
-//    {
-//        final FSSharkKB knowledgeBase = new FSSharkKB(TEST_DIRECTORY);
-//        final SyncKB syncKnowledgeBase = new SyncKB(knowledgeBase);
-//        final STSet subspaceDescriptions = SubSpaceAlgebra.extractSubspaceDescriptions(syncKnowledgeBase);
-//        final String[] descriptionSI = description.getSI();
-//        final SemanticTag subspaceDescription = subspaceDescriptions.getSemanticTag(descriptionSI);
-//        Assert.assertNotNull(subspaceDescription);
-//        final boolean identical = subspaceDescription.identical(description);
-//        Assert.assertTrue(identical);
-//    }
 }
