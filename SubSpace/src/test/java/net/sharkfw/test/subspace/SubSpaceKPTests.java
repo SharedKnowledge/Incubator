@@ -22,7 +22,7 @@ import net.sharkfw.peer.SharkEngine;
 import net.sharkfw.system.LoggingUtil;
 import net.sharkfw.subspace.knowledgeBase.StandardSubSpace;
 import net.sharkfw.subspace.knowledgeBase.SubSpace;
-import net.sharkfw.subspace.peer.SubSpaceKP;
+import net.sharkfw.subspace.peer.StandardSubSpaceKP;
 import net.sharkfw.system.L;
 import net.sharkfw.system.SharkSecurityException;
 import net.sharkfw.test.util.Dummy;
@@ -96,8 +96,8 @@ public class SubSpaceKPTests extends AbstractSubSpaceTest
         final SubSpace aliceJavaSubSpace = new StandardSubSpace(aliceJavaCS, java);
         final SubSpace bobJavaSubSpace = new StandardSubSpace(bobJavaCS, java);
         //KnowledgePorts
-        final SubSpaceKP aliceKP = new SubSpaceKP(aliceEngine, aliceJavaSubSpace, aliceKB);
-        final SubSpaceKP bobKP = new SubSpaceKP(bobEngine, bobJavaSubSpace, bobKB);
+        final StandardSubSpaceKP aliceKP = new StandardSubSpaceKP(aliceEngine, aliceJavaSubSpace, aliceKB);
+        final StandardSubSpaceKP bobKP = new StandardSubSpaceKP(bobEngine, bobJavaSubSpace, bobKB);
 
         final List<KnowledgePort> alicePorts = Collections.list(aliceEngine.getKPs());
         final List<KnowledgePort> bobPorts = Collections.list(bobEngine.getKPs());
