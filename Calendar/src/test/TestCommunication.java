@@ -34,7 +34,11 @@ public class TestCommunication {
 	private final static String ALICE_MAIL = "alice@example.com";
 	private final static String ALICE_NAME = "alice";	
 	private final static String ALICE_DIR = "alice_test_folder";
-	private final static String BOB_DIR = "bob_test_folder";	
+	private final static String BOB_DIR = "bob_test_folder";
+	
+	private final static String PORT_ALICE = "4666";
+	private final static String PORT_BOB = "4676";
+	
 	
 	private CalendarImpl alice_cal;
 	private CalendarImpl bob_cal;
@@ -52,8 +56,8 @@ public class TestCommunication {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		bob_host = new URI("tcp://localhost:5780");
-		alice_host = new URI("tcp://localhost:5813");
+		bob_host = new URI("tcp://localhost:" + PORT_BOB);
+		alice_host = new URI("tcp://localhost:" + PORT_ALICE);
 		alice_cal = new CalendarImpl("alice", ALICE_MAIL, alice_host, ALICE_DIR, true);
 		alice_cal.createUser("bob", "bob@example.com", bob_host);
 		
@@ -92,12 +96,12 @@ public class TestCommunication {
 	@Test
 	public void testCalComm() 
 							throws InterruptedException, IOException, CalendarException {
-		Thread.sleep(50);
+		Thread.sleep(150);
 		alice_cal.sendAndReceiveAppointments();
-		Thread.sleep(50);
+		Thread.sleep(150);
 		bob_cal.sendAndReceiveAppointments();  
 
-		Thread.sleep(4000);
+		Thread.sleep(6000);
 		alice_cal.closeConnection();
 		Thread.sleep(10);
 		bob_cal.closeConnection();
