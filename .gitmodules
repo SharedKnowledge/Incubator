@@ -4,9 +4,6 @@
 [submodule "TwitterImporter"]
 	path = TwitterImporter
 	url = https://github.com/pascalweiss/TwitterImporter.git
-[submodule "Calendar"]
-	path = Calendar
-	url = https://github.com/jwnkmllr/Calendar
 [submodule "YouTubeImporter"]
 	path = YouTubeImporter
 	url = https://github.com/frimelle/YouTubeImporter.git
