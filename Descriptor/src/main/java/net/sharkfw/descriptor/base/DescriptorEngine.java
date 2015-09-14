@@ -6,9 +6,10 @@
 package net.sharkfw.descriptor.base;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Set;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
@@ -38,28 +39,28 @@ public class DescriptorEngine
     }
 
     private final SharkKB sharkKB;
-    private List<SpaceDescriptor> spaceDescriptors;
 
     public DescriptorEngine(final SharkKB sharkKB)
     {
-        try
-        {
-            this.sharkKB = sharkKB;
-            loadSpaceDescriptor();
-        } catch (SharkKBException ex)
-        {
-            throw new IllegalStateException("Could not initialize class due to exception occurring.", ex);
-        }
+        this.sharkKB = sharkKB;
     }
 
-    public List<SpaceDescriptor> getSpaceDescriptors()
+    public Set<SpaceDescriptor> getDescriptors() throws SharkKBException, JAXBException
     {
-        return Collections.unmodifiableList(spaceDescriptors);
-    }
-
-    private void loadSpaceDescriptor() throws SharkKBException
-    {
+        final Set<SpaceDescriptor> descriptors = new HashSet<>();
         final String xml = sharkKB.getProperty(DESCRIPTOR_LIST);
+        if (xml != null)
+        {
+            final List<SpaceDescriptor> deserializedDescriptors = SERIALIZER.deserializeList(xml);
+            descriptors.addAll(deserializedDescriptors);
+        }
+        return descriptors;
     }
 
+    public final void saveDescriptor(final Set<SpaceDescriptor> descriptors) throws JAXBException, SharkKBException
+    {
+            final String xml = SERIALIZER.serializeList(descriptors);
+            sharkKB.setProperty(DESCRIPTOR_LIST, xml);
+  
+    }
 }

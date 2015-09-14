@@ -5,16 +5,10 @@
  */
 package net.sharkfw.descriptor.base;
 
-import java.util.AbstractSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import net.sharkfw.knowledgeBase.SharkCS;
@@ -34,23 +28,24 @@ public class SpaceDescriptor
     private SharkCS context;
     @XmlElement(name = "id")
     private String id;
-    @XmlElementWrapper(name = "children")
-    @XmlElement(name = "child")
-    private Set<String> children;
     @XmlElement(name = "parent")
     private String parent;
 
-    public SpaceDescriptor()
+    private SpaceDescriptor()
     {
-        children = new HashSet<>();
+        initialize(null, null, null);
     }
 
     public SpaceDescriptor(final SharkCS context, final String id)
     {
-        this();
-        this.context = context;
-        this.id = id;
+        this(context, id, null);
+    }
 
+    public SpaceDescriptor(final SharkCS context, final String id, final String parent)
+    {
+        Objects.requireNonNull(context, "Parameter 'context' must not be null.");
+        Objects.requireNonNull(id, "Parameter 'id' must not be null.");
+        initialize(context, id, parent);
     }
 
     public SharkCS getContext()
@@ -63,57 +58,19 @@ public class SpaceDescriptor
         return id;
     }
 
-    public Set<String> getChildren()
-    {
-        return Collections.unmodifiableSet(children);
-    }
-    
     public String getParent()
     {
         return parent;
     }
 
-    public boolean addChild(SpaceDescriptor descriptor)
-    {
-        final String descriptorId = descriptor.getId();
-        boolean success = children.add(descriptorId);
-        if (success)
-        {
-            descriptor.setParent(id);
-        }
-        return success;
-    }
-
-    public boolean removeChild(SpaceDescriptor descriptor)
-    {
-        final String descriptorId = descriptor.getId();
-        boolean success = children.remove(descriptorId);
-        if (success)
-        {
-            descriptor.setParent(null);
-        }
-        return success;
-    }
-
-    public int getChildrenCount()
-    {
-        return children.size();
-    }
-
-    public boolean hasChildren()
-    {
-        return !children.isEmpty();
-    }
-
-    public boolean containsChild(SpaceDescriptor descriptor)
-    {
-        final String otherId = descriptor.getId();
-        return children.contains(otherId);
-    }
-
-    protected void setParent(String parentId)
+    public void setParent(final String parentId)
     {
         this.parent = parentId;
+    }
+
+    public void setParent(final SpaceDescriptor descriptor)
+    {
+        this.parent = descriptor.getId();
     }
 
     /**
@@ -156,5 +113,12 @@ public class SpaceDescriptor
         int hash = 7;
         hash = 37 * hash + Objects.hashCode(id);
         return hash;
+    }
+
+    private void initialize(final SharkCS context, final String id, final String parent)
+    {
+        this.context = context;
+        this.id = id;
+        this.parent = parent;
     }
 }
