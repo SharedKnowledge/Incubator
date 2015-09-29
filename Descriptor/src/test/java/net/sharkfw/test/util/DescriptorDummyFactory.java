@@ -5,7 +5,7 @@
  */
 package net.sharkfw.test.util;
 
-import net.sharkfw.descriptor.base.SpaceDescriptor;
+import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
 import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
@@ -23,7 +23,7 @@ import net.sharkfw.subspace.knowledgeBase.SubSpaceFactory;
 public final class DescriptorDummyFactory
 {
 
-    public static SpaceDescriptor createSimpleDescriptor(final String name, final String subjectIdentifier) throws SharkKBException
+    public static ContextSpaceDescriptor createSimpleDescriptor(final String name, final String subjectIdentifier) throws SharkKBException
     {
         final SemanticTag topic = new InMemoSTSet().createSemanticTag(name, subjectIdentifier);
         final ContextCoordinates contextCoordinates = new InMemoSharkKB().createContextCoordinates(
@@ -35,6 +35,6 @@ public final class DescriptorDummyFactory
                 null,
                 SharkCS.DIRECTION_NOTHING
         );
-        return new SpaceDescriptor(contextCoordinates, subjectIdentifier);
+        return new ContextSpaceDescriptor(contextCoordinates, subjectIdentifier);
     }
 }

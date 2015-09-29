@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package net.sharkfw.test.subspace;
+package net.sharkfw.test.descriptor;
 
 import java.io.IOException;
 import java.util.Arrays;

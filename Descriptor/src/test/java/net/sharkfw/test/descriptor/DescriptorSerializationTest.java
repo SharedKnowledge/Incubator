@@ -3,12 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package net.sharkfw.test.subspace;
+package net.sharkfw.test.descriptor;
 
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.JAXBException;
-import net.sharkfw.descriptor.base.SpaceDescriptor;
+import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
@@ -30,29 +30,27 @@ public class DescriptorSerializationTest extends AbstractDescriptorTest
     @Test
     public void serializationAndDeserializationTest() throws SharkKBException, JAXBException
     {
-        final List<SpaceDescriptor> descriptors = new ArrayList<>();
-        final SpaceDescriptor javaDescriptor = DescriptorDummyFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        final List<ContextSpaceDescriptor> descriptors = new ArrayList<>();
+        final ContextSpaceDescriptor javaDescriptor = DescriptorDummyFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
         descriptors.add(javaDescriptor);
-        final SpaceDescriptor teapotDescriptors = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
-        teapotDescriptors.setParent(javaDescriptor);
+        final ContextSpaceDescriptor teapotDescriptors = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
         descriptors.add(teapotDescriptors);
 
-        final JAXBSerializer serializer = new JAXBSerializer(SpaceDescriptor.class);
+        final JAXBSerializer serializer = new JAXBSerializer(ContextSpaceDescriptor.class);
         final String descriptorsXml = serializer.serializeList(descriptors);
 
         L.d(descriptorsXml, this);
 
-        final List<SpaceDescriptor> deserializedDescriptors = serializer.deserializeList(descriptorsXml);
+        final List<ContextSpaceDescriptor> deserializedDescriptors = serializer.deserializeList(descriptorsXml);
 
-        for (SpaceDescriptor deserializedDescriptor : deserializedDescriptors)
+        for (ContextSpaceDescriptor deserializedDescriptor : deserializedDescriptors)
         {
             int index = descriptors.indexOf(deserializedDescriptor);
             if (index != NOT_FOUND)
             {
-                SpaceDescriptor descriptor = descriptors.get(index);
+                ContextSpaceDescriptor descriptor = descriptors.get(index);
                 Assert.assertEquals(descriptor, deserializedDescriptor);
                 Assert.assertEquals(descriptor.getId(), deserializedDescriptor.getId());
-                Assert.assertEquals(descriptor.getParent(), deserializedDescriptor.getParent());
                 final SharkCS descriptorContext = descriptor.getContext();
                 final SharkCS deserializedDescriptorContext = deserializedDescriptor.getContext();
                 final boolean identical = SharkCSAlgebra.identical(descriptorContext, deserializedDescriptorContext);
