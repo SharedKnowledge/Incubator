@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package example.subspace.chat.base;
+package example.descriptor.chat.base;
 
 import java.util.Date;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
@@ -34,9 +34,9 @@ public class ChatEntry
             throw new IllegalArgumentException("SharkKB must have an Owner.");
         }
         // topic
-        final SemanticTag topic = chatDescriptor.getTopics().tags().nextElement(); //should have exactly one element
+        final SemanticTag topic = chatDescriptor.getContext().getTopics().tags().nextElement(); //should have exactly one element
         // originator
-        final PeerSemanticTag originator = chatDescriptor.getOriginator();
+        final PeerSemanticTag originator = chatDescriptor.getContext().getOriginator();
         // time
         final long currentTime = System.currentTimeMillis();
         final TimeSemanticTag time = new InMemoTimeSemanticTag(currentTime, 0);

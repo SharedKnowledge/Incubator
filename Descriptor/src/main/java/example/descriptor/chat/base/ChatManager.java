@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package example.subspace.chat.base;
+package example.descriptor.chat.base;
 
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package example.subspace.chat.base;
+package example.descriptor.chat.base;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -85,7 +85,8 @@ public class Chat
         System.out.println(chatDescriptor.getId());
         Objects.requireNonNull(sharkKB, "KB null.");
         Objects.requireNonNull(chatDescriptor, "chatDescriptor null.");
-        final Knowledge knowledge = SharkCSAlgebra.extract(sharkKB, chatDescriptor);
+        final SharkCS chatContext = chatDescriptor.getContext();
+        final Knowledge knowledge = SharkCSAlgebra.extract(sharkKB, chatContext);
         final Enumeration<ContextPoint> contextPoints = knowledge.contextPoints();
         while (contextPoints.hasMoreElements())
         {

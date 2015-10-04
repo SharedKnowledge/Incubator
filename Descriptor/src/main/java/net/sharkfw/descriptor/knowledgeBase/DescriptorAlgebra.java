@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.Knowledge;
+import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
@@ -28,13 +29,18 @@ public final class DescriptorAlgebra
 
     public static Knowledge extract(final SharkKB source, final ContextSpaceDescriptor descriptor) throws SharkKBException
     {
-        return SharkCSAlgebra.extract(source, descriptor);
+        final SharkCS context = descriptor.getContext();
+        Knowledge knowledge = new InMemoKnowledge();
+        if(!descriptor.isEmpty()){
+            knowledge = SharkCSAlgebra.extract(source, context);
+        }
+        return knowledge;
     }
 
     public static Knowledge extract(final DescriptorSchema schema, final ContextSpaceDescriptor descriptor) throws SharkKBException
     {
         final SharkKB source = schema.getSharkKB();
-        return SharkCSAlgebra.extract(source, descriptor);
+        return extract(source, descriptor);
     }
 
     public static Knowledge extractWithSubtree(final DescriptorSchema schema, final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException, SharkKBException

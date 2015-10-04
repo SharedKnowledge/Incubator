@@ -1,4 +1,4 @@
-package example.subspace.chat.javafx;
+package example.descriptor.chat.javafx;
 
 import java.net.URL;
 import java.util.Arrays;

@@ -22,6 +22,10 @@ public abstract class AbstractDescriptorTest
     protected static final String TEAPOT_SI = "https://en.wikipedia.org/?title=Teapot";
     protected static final String JAVA_NAME = "java";
     protected static final String JAVA_SI = "https://www.java.com";
+    protected static final String C_NAME = "C";
+    protected static final String C_SI = "https://de.wikipedia.org/wiki/C_%28Programmiersprache%29";
+    protected static final String DEUTSCHLAND_NAME = "Deutschland";
+    protected static final String DEUTSCHLAND_SI = "https://de.wikipedia.org/wiki/Deutschland";
 
     public AbstractDescriptorTest()
     {

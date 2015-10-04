@@ -12,9 +12,6 @@ import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
-import net.sharkfw.subspace.knowledgeBase.StandardSubSpace;
-import net.sharkfw.subspace.knowledgeBase.SubSpace;
-import net.sharkfw.subspace.knowledgeBase.SubSpaceFactory;
 
 /**
  *

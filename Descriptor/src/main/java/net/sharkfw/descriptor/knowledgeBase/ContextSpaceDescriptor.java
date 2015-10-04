@@ -11,14 +11,9 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-import net.sharkfw.knowledgeBase.PeerSTSet;
-import net.sharkfw.knowledgeBase.PeerSemanticTag;
-import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
-import net.sharkfw.knowledgeBase.SpatialSTSet;
-import net.sharkfw.knowledgeBase.TimeSTSet;
 import net.sharkfw.system.L;
 import net.sharkfw.xml.jaxb.SharkCSAdapter;
 
@@ -28,7 +23,7 @@ import net.sharkfw.xml.jaxb.SharkCSAdapter;
  */
 @XmlRootElement(name = "space")
 @XmlAccessorType(XmlAccessType.FIELD)
-public class ContextSpaceDescriptor implements SharkCS
+public class ContextSpaceDescriptor
 {
 
     @XmlElement(name = "context")
@@ -49,9 +44,13 @@ public class ContextSpaceDescriptor implements SharkCS
         this(context, id, null);
     }
 
+    public ContextSpaceDescriptor(final String id)
+    {
+        this(null, id, null);
+    }
+
     protected ContextSpaceDescriptor(final SharkCS context, final String id, final String parent)
     {
-        Objects.requireNonNull(context, "Parameter 'context' must not be null.");
         Objects.requireNonNull(id, "Parameter 'id' must not be null.");
         initialize(context, id, parent);
     }
@@ -71,6 +70,16 @@ public class ContextSpaceDescriptor implements SharkCS
         return parent;
     }
 
+    public boolean isEmpty()
+    {
+        return (context == null);
+    }
+
+    public boolean hasParent()
+    {
+        return (parent != null);
+    }
+
     protected void setParent(final String parentId)
     {
         this.parent = parentId;
@@ -80,15 +89,10 @@ public class ContextSpaceDescriptor implements SharkCS
     {
         this.parent = descriptor.getId();
     }
-    
-     protected void clearParent()
+
+    protected void clearParent()
     {
         this.parent = null;
-    }
-
-    public boolean hasParent()
-    {
-        return (parent != null);
     }
 
     /**
@@ -143,7 +147,14 @@ public class ContextSpaceDescriptor implements SharkCS
         {
             identical &= parent.equals(otherParent);
         }
-        identical &= SharkCSAlgebra.identical(context, descriptor);
+        final SharkCS otherContext = descriptor.getContext();
+        if (context == null)
+        {
+            identical &= (otherContext == null);
+        } else
+        {
+            identical &= (otherContext != null) && SharkCSAlgebra.identical(context, otherContext);
+        }
         return identical;
     }
 
@@ -155,72 +166,13 @@ public class ContextSpaceDescriptor implements SharkCS
         builder.append("ID: ").append(id).append("\n");
         builder.append("Parent: ").append(parent).append("\n");
         builder.append("Context: ").append(contextAsString);
-        return builder.toString(); 
+        return builder.toString();
     }
-    
-    
 
     private void initialize(final SharkCS context, final String id, final String parent)
     {
         this.context = context;
         this.id = id;
         this.parent = parent;
-    }
-
-    ///////////////////////////////////////////////////////////////////////
-    //         Delegeting all other Methods to the wrapped context.      //
-    ///////////////////////////////////////////////////////////////////////
-    @Override
-    public STSet getTopics()
-    {
-        return context.getTopics();
-    }
-
-    @Override
-    public int getDirection()
-    {
-        return context.getDirection();
-    }
-
-    @Override
-    public PeerSemanticTag getOriginator()
-    {
-        return context.getOriginator();
-    }
-
-    @Override
-    public PeerSTSet getRemotePeers()
-    {
-        return context.getRemotePeers();
-    }
-
-    @Override
-    public PeerSTSet getPeers()
-    {
-        return context.getPeers();
-    }
-
-    @Override
-    public TimeSTSet getTimes()
-    {
-        return context.getTimes();
-    }
-
-    @Override
-    public SpatialSTSet getLocations()
-    {
-        return context.getLocations();
-    }
-
-    @Override
-    public boolean isAny(final int dimension)
-    {
-        return context.isAny(dimension);
-    }
-
-    @Override
-    public STSet getSTSet(final int dimension) throws SharkKBException
-    {
-        return context.getSTSet(dimension);
     }
 }

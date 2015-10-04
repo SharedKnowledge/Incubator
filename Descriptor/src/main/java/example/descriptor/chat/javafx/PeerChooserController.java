@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package example.subspace.chat.javafx;
+package example.descriptor.chat.javafx;
 
-import static example.subspace.chat.javafx.ChatApp.switchScene;
+import static example.descriptor.chat.javafx.ChatApp.switchScene;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;

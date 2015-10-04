@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package example.subspace.chat.javafx;
+package example.descriptor.chat.javafx;
 
 import java.io.IOException;
 import java.net.URL;
