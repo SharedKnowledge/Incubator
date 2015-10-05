@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -169,7 +170,7 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         try
         {
             schema.setParent(javaDescriptor, teapotDescriptor);
-        } catch (IllegalArgumentException e)
+        } catch (DescriptorSchemaException e)
         {
             L.d(e.getMessage());
             notInSchemaError = true;
@@ -184,7 +185,7 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         try
         {
             schema.setParent(teapotDescriptor, javaDescriptor);
-        } catch (IllegalArgumentException e)
+        } catch (DescriptorSchemaException e)
         {
             L.d(e.getMessage());
             loopError = true;
@@ -197,7 +198,7 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         try
         {
             schema.clearParent(javaDescriptor);
-        } catch (IllegalArgumentException e)
+        } catch (DescriptorSchemaException e)
         {
             L.d(e.getMessage());
             clearError = true;
@@ -240,6 +241,25 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         Assert.assertEquals(javaDescriptor, javaDescriptorAsParent);
         final Set<ContextSpaceDescriptor> javaChildren = schema.getChildren(javaDescriptor);
         Assert.assertTrue(javaChildren.contains(teapotDescriptor));
+    }
+
+    @Test
+    public void containsTest() throws SharkKBException, DescriptorSchemaException
+    {
+        final SharkKB sharkKB = new InMemoSharkKB();
+        final DescriptorSchema schema = new DescriptorSchema(sharkKB);
+
+        final ContextSpaceDescriptor javaDescriptor = DescriptorDummyFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        schema.saveDescriptor(javaDescriptor);
+        final ContextSpaceDescriptor javaNotIdeticalDescriptor = new ContextSpaceDescriptor(JAVA_SI);
+        final ContextSpaceDescriptor teapotDescriptor = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
+
+        Assert.assertTrue(schema.contains(javaDescriptor));
+        Assert.assertTrue(schema.contains(javaNotIdeticalDescriptor));
+        Assert.assertFalse(schema.contains(teapotDescriptor));
+        Assert.assertTrue(schema.containsIdentical(javaDescriptor));
+        Assert.assertFalse(schema.containsIdentical(teapotDescriptor));
+        Assert.assertFalse(schema.containsIdentical(javaNotIdeticalDescriptor));
     }
 
 }

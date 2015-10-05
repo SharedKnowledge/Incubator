@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
+import net.sharkfw.kep.format.SerializerFactroy;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
@@ -36,7 +37,7 @@ public class DescriptorSerializationTest extends AbstractDescriptorTest
         final ContextSpaceDescriptor teapotDescriptors = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
         descriptors.add(teapotDescriptors);
 
-        final JAXBSerializer serializer = new JAXBSerializer(ContextSpaceDescriptor.class);
+        final JAXBSerializer serializer = SerializerFactroy.INSTANCE.getDescriptorSerializer();
         final String descriptorsXml = serializer.serializeList(descriptors);
 
         L.d(descriptorsXml, this);
@@ -59,7 +60,11 @@ public class DescriptorSerializationTest extends AbstractDescriptorTest
             {
                 Assert.fail("Descriptor not found in original List.");
             }
-
         }
+        
+        final String javaDescriptorAsXML = serializer.serialize(javaDescriptor);
+        Assert.assertFalse(javaDescriptorAsXML.isEmpty());
+        final ContextSpaceDescriptor deserializedJavaDescriptor = serializer.deserialize(javaDescriptorAsXML, ContextSpaceDescriptor.class);
+        Assert.assertTrue(javaDescriptor.identical(deserializedJavaDescriptor));
     }
 }

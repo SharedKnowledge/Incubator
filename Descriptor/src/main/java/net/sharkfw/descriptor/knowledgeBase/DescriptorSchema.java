@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import javax.xml.bind.JAXBException;
+import net.sharkfw.kep.format.SerializerFactroy;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.xml.jaxb.JAXBSerializer;
@@ -25,20 +26,7 @@ public class DescriptorSchema
 {
 
     private static final String DESCRIPTOR_LIST = "net.sharkfw.descriptor.knowledgeBase.DescriptorEngine#DESCRIPTOR_LIST";
-    private static final JAXBSerializer SERIALIZER;
-
-    // Initialize the JAXBSerializer. This isn't great but faster than 
-    // recreating the JAXBSerializer and underlying JAXBContext for every instance.
-    static
-    {
-        try
-        {
-            SERIALIZER = new JAXBSerializer(ContextSpaceDescriptor.class);
-        } catch (JAXBException ex)
-        {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
+    private static final JAXBSerializer SERIALIZER = SerializerFactroy.INSTANCE.getDescriptorSerializer();
 
     private final SharkKB sharkKB;
 
@@ -71,12 +59,11 @@ public class DescriptorSchema
         return descriptors;
     }
 
-    public Set<ContextSpaceDescriptor> getChildren(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
+    public static Set<ContextSpaceDescriptor> getChildren(final ContextSpaceDescriptor descriptor, final Collection<ContextSpaceDescriptor> descriptors)
     {
         final Set<ContextSpaceDescriptor> children = new HashSet<>();
-        final Set<ContextSpaceDescriptor> savedDescriptors = getDescriptors();
         final String id = descriptor.getId();
-        for (ContextSpaceDescriptor savedDescriptor : savedDescriptors)
+        for (ContextSpaceDescriptor savedDescriptor : descriptors)
         {
             final String parentId = savedDescriptor.getParent();
             if (parentId != null && id.equals(parentId))
@@ -87,14 +74,19 @@ public class DescriptorSchema
         return children;
     }
 
-    public ContextSpaceDescriptor getParent(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
+    public Set<ContextSpaceDescriptor> getChildren(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> savedDescriptors = getDescriptors();
+        return getChildren(descriptor, savedDescriptors);
+    }
+
+    public static ContextSpaceDescriptor getParent(final ContextSpaceDescriptor descriptor, final Collection<ContextSpaceDescriptor> descriptors)
+    {
         ContextSpaceDescriptor parent = null;
         if (descriptor.hasParent())
         {
             final String parentId = descriptor.getParent();
-            for (Iterator<ContextSpaceDescriptor> iterator = savedDescriptors.iterator(); parent == null && iterator.hasNext();)
+            for (Iterator<ContextSpaceDescriptor> iterator = descriptors.iterator(); parent == null && iterator.hasNext();)
             {
                 final ContextSpaceDescriptor element = iterator.next();
                 final String id = element.getId();
@@ -105,6 +97,49 @@ public class DescriptorSchema
             }
         }
         return parent;
+    }
+
+    public ContextSpaceDescriptor getParent(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
+    {
+        final Set<ContextSpaceDescriptor> savedDescriptors = getDescriptors();
+        return getParent(descriptor, savedDescriptors);
+    }
+
+    public void setParent(final ContextSpaceDescriptor descriptor, final ContextSpaceDescriptor parent) throws DescriptorSchemaException
+    {
+        final Set<ContextSpaceDescriptor> existingDescriptors = getDescriptors();
+        final String sourceId = descriptor.getId();
+        if (!existingDescriptors.contains(descriptor) || !existingDescriptors.contains(parent))
+        {
+            throw new DescriptorSchemaException("Given parameters do not exist in schema.");
+        }
+        final Set<String> testedParentIds = new HashSet<>();
+        ContextSpaceDescriptor descriptorToTest = new ContextSpaceDescriptor(
+                descriptor.getContext(),
+                sourceId,
+                parent.getId()
+        );
+
+        boolean error = false;
+        while (descriptorToTest.hasParent() && !error)
+        {
+            final String parentId = descriptorToTest.getParent();
+            final boolean success = testedParentIds.add(parentId);
+            if (success && !sourceId.equals(parentId))
+            {
+                descriptorToTest = getParent(descriptorToTest);
+            } else
+            {
+                error = true;
+            }
+        }
+        if (error)
+        {
+            throw new DescriptorSchemaException("Adding this parent would create an loop without a root element.");
+        }
+        removeDescriptor(descriptor);
+        descriptor.setParent(parent);
+        saveDescriptor(descriptor);
     }
 
     public boolean saveDescriptor(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
@@ -152,41 +187,37 @@ public class DescriptorSchema
         return sharkKB;
     }
 
-    public void setParent(final ContextSpaceDescriptor descriptor, final ContextSpaceDescriptor parent) throws DescriptorSchemaException
+    public boolean contains(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
-        final Set<ContextSpaceDescriptor> existingDescriptors = getDescriptors();
-        final String sourceId = descriptor.getId();
-        if (!existingDescriptors.contains(descriptor) || !existingDescriptors.contains(parent))
-        {
-            throw new IllegalArgumentException("Given parameters do not exist in schema.");
-        }
-        final Set<String> testedParentIds = new HashSet<>();
-        ContextSpaceDescriptor descriptorToTest = new ContextSpaceDescriptor(
-                descriptor.getContext(),
-                sourceId,
-                parent.getId()
-        );
+        final Collection<ContextSpaceDescriptor> descriptors = getDescriptors();
+        return descriptors.contains(descriptor);
+    }
 
-        boolean error = false;
-        while (descriptorToTest.hasParent() && !error)
+    public static boolean containsIdentical(final ContextSpaceDescriptor descriptor, final Collection<ContextSpaceDescriptor> descriptors) throws DescriptorSchemaException
+    {
+        boolean found = false;
+        try
         {
-            final String parentId = descriptorToTest.getParent();
-            final boolean success = testedParentIds.add(parentId);
-            if (success && !sourceId.equals(parentId))
+            for (Iterator<ContextSpaceDescriptor> iterator = descriptors.iterator(); !found && iterator.hasNext();)
             {
-                descriptorToTest = getParent(descriptorToTest);
-            } else
-            {
-                error = true;
+
+                final ContextSpaceDescriptor element = iterator.next();
+                if (element.identical(descriptor))
+                {
+                    found = true;
+                }
             }
-        }
-        if (error)
+        } catch (SharkKBException ex)
         {
-            throw new IllegalArgumentException("Adding this parent would create an loop without a root element.");
+            throw new DescriptorSchemaException("Error while testing descriptor.", ex);
         }
-        removeDescriptor(descriptor);
-        descriptor.setParent(parent);
-        saveDescriptor(descriptor);
+        return found;
+    }
+
+    public boolean containsIdentical(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
+    {
+        final Collection<ContextSpaceDescriptor> descriptors = getDescriptors();
+        return containsIdentical(descriptor, descriptors);
     }
 
     public void clearParent(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
@@ -194,7 +225,7 @@ public class DescriptorSchema
         final Set<ContextSpaceDescriptor> existingDescriptors = getDescriptors();
         if (!existingDescriptors.contains(descriptor))
         {
-            throw new IllegalArgumentException("Given descriptor does not exist in schema.");
+            throw new DescriptorSchemaException("Given descriptor does not exist in schema.");
         }
         removeDescriptor(descriptor);
         descriptor.clearParent();

@@ -35,10 +35,20 @@ public class JAXBSerializer
         classesToBeBound = classesToBeBoundAsList.toArray(classesToBeBound);
         this.jaxbContext = JAXBContext.newInstance(classesToBeBound);
     }
-
-    public <T> String serializeList(final Collection<T> descriptors) throws JAXBException
+    
+    public String serialize(final Object object) throws JAXBException
     {
-        List<T> list = new ArrayList<>(descriptors);
+        return marshal(object);
+    }
+    
+    public <T> T deserialize(final String xml, Class<T> type) throws JAXBException
+    {
+        return unmarshal(xml, type);
+    }
+
+    public <T> String serializeList(final Collection<T> collection) throws JAXBException
+    {
+        List<T> list = new ArrayList<>(collection);
         return JAXBSerializer.this.serializeList(list);
     }
 
