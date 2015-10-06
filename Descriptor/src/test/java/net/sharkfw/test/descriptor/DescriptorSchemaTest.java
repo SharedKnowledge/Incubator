@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,7 +22,7 @@ import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.system.L;
 import static net.sharkfw.test.descriptor.AbstractDescriptorTest.JAVA_NAME;
-import net.sharkfw.test.util.DescriptorDummyFactory;
+import net.sharkfw.test.util.DummyDataFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -107,10 +106,10 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         final Set<ContextSpaceDescriptor> descriptors = new HashSet<>();
         Set<ContextSpaceDescriptor> savedDescriptors;
 
-        final ContextSpaceDescriptor javaDescriptor = DescriptorDummyFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        final ContextSpaceDescriptor javaDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
         descriptors.add(javaDescriptor);
         schema.saveDescriptor(javaDescriptor);
-        final ContextSpaceDescriptor teapotDescriptor = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
+        final ContextSpaceDescriptor teapotDescriptor = DummyDataFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
         descriptors.add(teapotDescriptor);
 
         schema.saveDescriptors(descriptors);
@@ -161,9 +160,9 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         final DescriptorSchema schema = new DescriptorSchema(sharkKB);
         final Set<ContextSpaceDescriptor> descriptors = new HashSet<>();
 
-        final ContextSpaceDescriptor javaDescriptor = DescriptorDummyFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        final ContextSpaceDescriptor javaDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
         descriptors.add(javaDescriptor);
-        final ContextSpaceDescriptor teapotDescriptor = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
+        final ContextSpaceDescriptor teapotDescriptor = DummyDataFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
         descriptors.add(teapotDescriptor);
         // Adding Parent here  must throw an IllegalArgumentException because teapotDescriptors is not in Schema
         boolean notInSchemaError = false;
@@ -213,9 +212,9 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         final DescriptorSchema schema = new DescriptorSchema(sharkKB);
         final Set<ContextSpaceDescriptor> descriptors = new HashSet<>();
 
-        final ContextSpaceDescriptor javaDescriptor = DescriptorDummyFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        final ContextSpaceDescriptor javaDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
         descriptors.add(javaDescriptor);
-        final ContextSpaceDescriptor teapotDescriptor = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
+        final ContextSpaceDescriptor teapotDescriptor = DummyDataFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
         descriptors.add(teapotDescriptor);
         schema.saveDescriptors(descriptors);
 
@@ -249,10 +248,10 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         final SharkKB sharkKB = new InMemoSharkKB();
         final DescriptorSchema schema = new DescriptorSchema(sharkKB);
 
-        final ContextSpaceDescriptor javaDescriptor = DescriptorDummyFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        final ContextSpaceDescriptor javaDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
         schema.saveDescriptor(javaDescriptor);
         final ContextSpaceDescriptor javaNotIdeticalDescriptor = new ContextSpaceDescriptor(JAVA_SI);
-        final ContextSpaceDescriptor teapotDescriptor = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
+        final ContextSpaceDescriptor teapotDescriptor = DummyDataFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
 
         Assert.assertTrue(schema.contains(javaDescriptor));
         Assert.assertTrue(schema.contains(javaNotIdeticalDescriptor));

@@ -9,7 +9,7 @@ package net.sharkfw.system;
  *
  * @author Nitros Razril (pseudonym)
  */
-public final class LoggingUtil
+public final class LoggingUtils
 {
 
     private static final char BOX_CHAR = '*';
@@ -25,7 +25,7 @@ public final class LoggingUtil
         WARNING
     };
 
-    private LoggingUtil()
+    private LoggingUtils()
     {
     }
 

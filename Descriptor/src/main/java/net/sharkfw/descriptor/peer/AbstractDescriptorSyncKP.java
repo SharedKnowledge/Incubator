@@ -1,17 +1,23 @@
 package net.sharkfw.descriptor.peer;
 
+import java.io.IOException;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
+import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
+import net.sharkfw.descriptor.knowledgeBase.SyncDescriptorSchema;
 import net.sharkfw.kep.format.SerializerFactroy;
-import net.sharkfw.knowledgeBase.ContextCoordinates;
+import net.sharkfw.knowledgeBase.PeerSTSet;
+import net.sharkfw.knowledgeBase.PeerSemanticTag;
+import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKBException;
+import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.knowledgeBase.sync.AbstractSyncKP;
-import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.peer.SharkEngine;
+import net.sharkfw.system.SharkSecurityException;
 import net.sharkfw.xml.jaxb.JAXBSerializer;
 
 /**
@@ -21,30 +27,51 @@ import net.sharkfw.xml.jaxb.JAXBSerializer;
 public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
 {
 
-    private boolean lern;
-
     protected static final String DESCRIPTOR_KEY = "net.sharkfw.descriptor.peer.DescriptorSyncKP#DESCRIPTOR_PROPERTY";
+    protected static final String METADATA_NAME = "net.sharkfw.descriptor.peer.DescriptorSyncKP#METADATA_NAME";
 
-    public AbstractDescriptorSyncKP(final SharkEngine sharkEngine, final SyncKB syncKB, final ContextSpaceDescriptor descriptor, boolean lern)
+    private final SyncDescriptorSchema schema;
+
+    public AbstractDescriptorSyncKP(final SharkEngine sharkEngine, final SyncDescriptorSchema schema, final ContextSpaceDescriptor descriptor, final PeerSTSet recipients)
     {
-        super(sharkEngine, syncKB, buildContext(descriptor));
-        this.lern = lern;
+        super(sharkEngine, schema.getSyncKB(), buildContext(descriptor, recipients, schema));
+        try
+        {
+            if (!schema.containsIdentical(descriptor))
+            {
+                throw new IllegalArgumentException("There is no identical descriptor in the schema.");
+            }
+            this.schema = schema;
+        } catch (DescriptorSchemaException ex)
+        {
+            throw new IllegalStateException("Error while testing descriptor.", ex);
+        }
     }
 
-    public AbstractDescriptorSyncKP(final SharkEngine sharkEngine, final SyncKB syncKB, final ContextSpaceDescriptor descriptor)
+    public AbstractDescriptorSyncKP(final SharkEngine sharkEngine, final SyncDescriptorSchema schema, final ContextSpaceDescriptor descriptor)
     {
-        this(sharkEngine, syncKB, descriptor, false);
+        this(sharkEngine, schema, descriptor, null);
+    }
+
+    public SyncDescriptorSchema getSchema()
+    {
+        return schema;
+    }
+
+    public ContextSpaceDescriptor getDescriptor()
+    {
+        final SharkCS localContext = getInterest();
+        return deserialize(localContext);
     }
 
     @Override
     protected boolean isInterested(final SharkCS context)
     {
         boolean interesed = isValidContext(context);
-        interesed |= isIKP();
         if (interesed)
         {
-            final SharkCS localContext = getInterest();
-            final ContextSpaceDescriptor localDescriptor = deserialize(localContext);
+            
+            final ContextSpaceDescriptor localDescriptor = getDescriptor();
             final ContextSpaceDescriptor remoteDescriptor = deserialize(context);
             interesed |= localDescriptor.equals(remoteDescriptor);
         }
@@ -57,22 +84,12 @@ public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
         SemanticTag identifier = null;
         try
         {
-            identifier = context.getTopics().getSemanticTag(DESCRIPTOR_KEY);
+            identifier = context.getTopics().getSemanticTag(METADATA_NAME);
         } catch (SharkKBException ex)
         {
             throw new IllegalStateException("Getting identifier failed.", ex);
         }
         return identifier;
-    }
-
-    protected boolean isLern()
-    {
-        return lern;
-    }
-
-    protected void setLern(boolean lern)
-    {
-        this.lern = lern;
     }
 
     protected static String serialize(final ContextSpaceDescriptor descriptor)
@@ -97,10 +114,10 @@ public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
             if (!isValidContext(context))
             {
                 throw new IllegalArgumentException("Context has no topic dimension, "
-                        + "no topic with an SI of " + DESCRIPTOR_KEY + " or "
+                        + "no topic with an SI of " + METADATA_NAME + " or "
                         + "the topic has no Prperty of key" + DESCRIPTOR_KEY + ".");
             }
-            final String xml = context.getTopics().getSemanticTag(DESCRIPTOR_KEY).getProperty(DESCRIPTOR_KEY);
+            final String xml = context.getTopics().getSemanticTag(METADATA_NAME).getProperty(DESCRIPTOR_KEY);
             if (xml.isEmpty())
             {
                 throw new IllegalArgumentException("The Property withe the key" + DESCRIPTOR_KEY + " is the empty String.");
@@ -119,8 +136,8 @@ public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
         boolean valid = (context.getTopics() != null);
         try
         {
-            valid |= (context.getTopics().getSemanticTag(DESCRIPTOR_KEY) != null);
-            valid |= (context.getTopics().getSemanticTag(DESCRIPTOR_KEY).getProperty(DESCRIPTOR_KEY) != null);
+            valid |= (context.getTopics().getSemanticTag(METADATA_NAME) != null);
+            valid |= (context.getTopics().getSemanticTag(METADATA_NAME).getProperty(DESCRIPTOR_KEY) != null);
         } catch (SharkKBException ex)
         {
             throw new IllegalStateException("Error while Validation of SharkCS.", ex);
@@ -128,22 +145,38 @@ public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
         return valid;
     }
 
-    private static SharkCS buildContext(final ContextSpaceDescriptor descriptor)
+    private static SharkCS buildContext(final ContextSpaceDescriptor descriptor, final PeerSTSet recipients, final SyncDescriptorSchema schema)
     {
+        if (descriptor.isEmpty())
+        {
+            throw new IllegalArgumentException("ContextSpaceDescriptor must not be empty.");
+        }
         try
         {
-            final SemanticTag descriptorTopic = new InMemoSTSet().createSemanticTag(DESCRIPTOR_KEY, DESCRIPTOR_KEY);
             final String descriptorProperty = serialize(descriptor);
-            descriptorTopic.setProperty(DESCRIPTOR_KEY, descriptorProperty);
-            final ContextCoordinates context = new InMemoSharkKB().createContextCoordinates(
-                    descriptorTopic,
+            final STSet topicDimension = new InMemoSTSet();
+            final SemanticTag descriptorTopic = topicDimension.createSemanticTag(METADATA_NAME, METADATA_NAME);
+            final PeerSTSet peersDimension = new InMemoPeerSTSet();
+            final PeerSemanticTag owner = schema.getSyncKB().getOwner();
+            peersDimension.merge(owner);
+            final PeerSTSet remotePeersDimension;
+            if (recipients == null)
+            {
+                remotePeersDimension = descriptor.getContext().getRemotePeers();
+            } else
+            {
+                remotePeersDimension = recipients;
+            }
+            final SharkCS context = new InMemoSharkKB().createInterest(
+                    topicDimension,
+                    null,
+                    peersDimension,
+                    remotePeersDimension,
                     null,
                     null,
-                    null,
-                    null,
-                    null,
-                    SharkCS.DIRECTION_NOTHING
+                    SharkCS.DIRECTION_INOUT
             );
+            descriptorTopic.setProperty(DESCRIPTOR_KEY, descriptorProperty);
             return context;
         } catch (SharkKBException ex)
         {

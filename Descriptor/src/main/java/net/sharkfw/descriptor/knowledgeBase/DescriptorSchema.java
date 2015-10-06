@@ -105,14 +105,20 @@ public class DescriptorSchema
         return getParent(descriptor, savedDescriptors);
     }
 
+    /**
+     * Test
+     *
+     * @param descriptor
+     * @param parent
+     * @throws DescriptorSchemaException
+     */
     public void setParent(final ContextSpaceDescriptor descriptor, final ContextSpaceDescriptor parent) throws DescriptorSchemaException
     {
-        final Set<ContextSpaceDescriptor> existingDescriptors = getDescriptors();
-        final String sourceId = descriptor.getId();
-        if (!existingDescriptors.contains(descriptor) || !existingDescriptors.contains(parent))
+        if (!containsIdentical(descriptor) || !containsIdentical(parent))
         {
-            throw new DescriptorSchemaException("Given parameters do not exist in schema.");
+            throw new DescriptorSchemaException("Given parameters do not exist identical in schema.");
         }
+        final String sourceId = descriptor.getId();
         final Set<String> testedParentIds = new HashSet<>();
         ContextSpaceDescriptor descriptorToTest = new ContextSpaceDescriptor(
                 descriptor.getContext(),

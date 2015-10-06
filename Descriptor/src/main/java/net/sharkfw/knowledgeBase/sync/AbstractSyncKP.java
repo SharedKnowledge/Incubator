@@ -1,16 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.sharkfw.knowledgeBase.sync;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.FragmentationParameter;
@@ -27,9 +25,10 @@ import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.peer.KEPConnection;
 import net.sharkfw.peer.KnowledgePort;
 import net.sharkfw.peer.SharkEngine;
-import net.sharkfw.system.LoggingUtil;
+import net.sharkfw.system.LoggingUtils;
 import net.sharkfw.system.L;
 import net.sharkfw.system.SharkException;
+import net.sharkfw.system.SharkSecurityException;
 
 /**
  *
@@ -37,14 +36,6 @@ import net.sharkfw.system.SharkException;
  */
 public abstract class AbstractSyncKP extends KnowledgePort
 {
-
-    private static final String PROTOCOL_STATE = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#PROTOCOL_STATE";
-
-    private static final String PROTOCOL_STATE_NONE = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#PROTOCOL_STATE_NONE";
-    private static final String SERIALIZED_CONTEXT_POINTS = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#SERIALIZED_CONTEXT_POINTS";
-    private static final String PROTOCOL_STATE_OFFER = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#PROTOCOL_STATE_OFFER";
-    private static final String PROTOCOL_STATE_REQUEST = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#PROTOCOL_STATE_REQUEST";
-
     private final TimestampList timestampList;
     private final FragmentationParameter topicsFP;
     private final FragmentationParameter peersFP;
@@ -72,6 +63,15 @@ public abstract class AbstractSyncKP extends KnowledgePort
     public AbstractSyncKP(final SharkEngine sharkEngine, final SyncKB syncKB, final SharkCS context)
     {
         this(sharkEngine, syncKB, context, FragmentationParameter.getZeroFP(), FragmentationParameter.getZeroFP());
+    }
+
+    public void send() throws SharkSecurityException, IOException
+    {
+        if (!se.isStarted())
+        {
+            throw new IllegalStateException("Cannot send data without any open communication stubs on engine.");
+        }
+        se.publishKP(this);
     }
 
     protected abstract Knowledge getOffer() throws SharkKBException;
@@ -103,7 +103,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
     {
         final String knowledgeString = L.knowledge2String(knowledge);
         final String ownerName = kb.getOwner().getName();
-        LoggingUtil.debugBox(ownerName + " received Knowledge for insert", knowledgeString, this);
+        LoggingUtils.debugBox(ownerName + " received Knowledge for insert", knowledgeString, this);
         try
         {
             // Only do insert, wenn we are actually intereded in receiving Information.
@@ -121,7 +121,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
                     if (remoteVersion > localVersion)
                     {
                         final String contextPointString = L.cp2String(remoteContextPoint);
-                        LoggingUtil.debugBox("Insert/Replace ContextPoint in KB of " + ownerName + ".", contextPointString, this);
+                        LoggingUtils.debugBox("Insert/Replace ContextPoint in KB of " + ownerName + ".", contextPointString, this);
                         VersionUtils.replaceContextPoint(remoteContextPoint, kb);
                     }
                 }
@@ -131,6 +131,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
             }
         } catch (SharkKBException ex)
         {
+            Logger.getLogger(AbstractSyncKP.class.getName()).log(Level.SEVERE, null, ex);
             throw new IllegalStateException("Exception occurred in doInsert.", ex);
         }
     }
@@ -138,26 +139,14 @@ public abstract class AbstractSyncKP extends KnowledgePort
     @Override
     protected void doExpose(final SharkCS context, final KEPConnection kepConnection)
     {
+        LoggingUtils.debugBox("Received Interest " + kb.getOwner().getName() + " :", L.contextSpace2String(context));
         try
         {
             final SemanticTag identifier = getIdentifier(context);
-            if (isOKP() && identifier != null && isInterested(context))
+            final boolean interested = isInterested(context);
+            if (isOKP() && identifier != null && interested)
             {
-                final String protocolState = getProtocoleState(identifier);
-                switch (protocolState)
-                {
-                    case PROTOCOL_STATE_NONE:
-                        offerContextPoints(context, kepConnection);
-                        break;
-                    case PROTOCOL_STATE_OFFER:
-                        requestContextPoints(context, kepConnection);
-                        break;
-                    case PROTOCOL_STATE_REQUEST:
-                        answerRequest(context, kepConnection);
-                        break;
-                    default:
-                        throw new IllegalStateException("Could not find a vaild protocol state.");
-                }
+                sendKnowledge(kepConnection);
             } else
             {
                 final StringBuilder builder = new StringBuilder();
@@ -180,103 +169,58 @@ public abstract class AbstractSyncKP extends KnowledgePort
             }
         } catch (SharkException ex)
         {
+            Logger.getLogger(AbstractSyncKP.class.getName()).log(Level.SEVERE, null, ex);
             throw new IllegalStateException("Exception occurred in doExpose.", ex);
+        } catch (Exception ex)
+        {
+            Logger.getLogger(AbstractSyncKP.class.getName()).log(Level.SEVERE, null, ex);
+            throw ex;
         }
     }
 
-    private void offerContextPoints(final SharkCS context, final KEPConnection kepConnection) throws SharkException
+    private void sendKnowledge(final KEPConnection kepConnection) throws SharkException
     {
         final PeerSemanticTag sender = kepConnection.getSender();
         final String[] senderAddresses = sender.getAddresses();
         final Date lastPeerMeeting = timestampList.getTimestamp(sender);
         final List<SyncContextPoint> syncContextPoints = getOffer(lastPeerMeeting);
-        final String serializedContextPoints = ContextCoordinatesSerializer.serializeContextCoordinatesList(syncContextPoints);
-        final SemanticTag identifier = getIdentifier(context);
-        identifier.setProperty(SERIALIZED_CONTEXT_POINTS, serializedContextPoints);
-        identifier.setProperty(PROTOCOL_STATE, PROTOCOL_STATE_OFFER);
-        kepConnection.expose(context, senderAddresses);
-        this.notifyExposeSent(this, context);
-    }
-
-    private void requestContextPoints(final SharkCS context, final KEPConnection kepConnection) throws SharkException
-    {
-        final List<SyncContextPoint> requestContextPoints = new ArrayList<>();
-        final PeerSemanticTag sender = kepConnection.getSender();
-        final String[] senderAddresses = sender.getAddresses();
-        final SemanticTag identifier = getIdentifier(context);
-        final String contextPointsProperty = identifier.getProperty(SERIALIZED_CONTEXT_POINTS);
-        if (contextPointsProperty != null)
+        //build Knowledge
+        final Knowledge knowledge = new InMemoSharkKB().asKnowledge();
+        for (SyncContextPoint syncContextPoint : syncContextPoints)
         {
-            final List<SyncContextPoint> remoteContextPoints = ContextCoordinatesSerializer.deserializeContextCoordinatesList(contextPointsProperty);
-            for (SyncContextPoint remoteContextPoint : remoteContextPoints)
+            if (syncContextPoint != null)
             {
-                final ContextCoordinates remoteContextCoordinates = remoteContextPoint.getContextCoordinates();
-                final ContextPoint localContextPoint = kb.getContextPoint(remoteContextCoordinates);
-                final int localVersion = (localContextPoint == null) ? 0 : VersionUtils.getVersion(localContextPoint);
-                final int remoteVersion = VersionUtils.getVersion(remoteContextPoint);
-                if (remoteVersion > localVersion)
+                final ContextCoordinates contextCoordinates = syncContextPoint.getContextCoordinates();
+                final SemanticTag topic = contextCoordinates.getTopic();
+                final SharkVocabulary vocabulary = knowledge.getVocabulary();
+                if (topic != null)
                 {
-                    requestContextPoints.add(remoteContextPoint);
+                    STSet topics = kb.getTopicSTSet().fragment(topic, topicsFP);
+                    vocabulary.getTopicSTSet().merge(topics);
                 }
-            }
-            final String serializedContextPoints = ContextCoordinatesSerializer.serializeContextCoordinatesList(requestContextPoints);
-            identifier.setProperty(SERIALIZED_CONTEXT_POINTS, serializedContextPoints);
-            identifier.setProperty(PROTOCOL_STATE, PROTOCOL_STATE_REQUEST);
-            kepConnection.expose(context, senderAddresses);
-            this.notifyExposeSent(this, context);
-        } else
-        {
-            throw new IllegalStateException("No ContextPoint found. Property AbstractSyncKP#SERIALIZED_CONTEXT_POINTS on identifier is null.");
-        }
-    }
-
-    private void answerRequest(final SharkCS context, final KEPConnection kepConnection) throws SharkException
-    {
-        final PeerSemanticTag sender = kepConnection.getSender();
-        final String[] senderAddresses = sender.getAddresses();
-        final SemanticTag identifier = getIdentifier(context);
-        final String contextPointsProperty = identifier.getProperty(SERIALIZED_CONTEXT_POINTS);
-        if (contextPointsProperty != null)
-        {
-            final List<SyncContextPoint> remoteSyncContextPoints = ContextCoordinatesSerializer.deserializeContextCoordinatesList(contextPointsProperty);
-            final Knowledge knowledge = new InMemoSharkKB().asKnowledge();
-            for (SyncContextPoint remoteSyncContextPoint : remoteSyncContextPoints)
-            {
-                final ContextCoordinates remoteContextCoordinates = remoteSyncContextPoint.getContextCoordinates();
-                final ContextPoint localContextPoint = kb.getContextPoint(remoteContextCoordinates);
-                if (localContextPoint != null)
+                final PeerSemanticTag peer = contextCoordinates.getPeer();
+                if (peer != null)
                 {
-                    final ContextCoordinates localContextCoordinates = localContextPoint.getContextCoordinates();
-                    final SemanticTag topic = localContextCoordinates.getTopic();
-                    final SharkVocabulary vocabulary = knowledge.getVocabulary();
-                    if (topic != null)
-                    {
-                        STSet topics = kb.getTopicSTSet().fragment(topic, topicsFP);
-                        vocabulary.getTopicSTSet().merge(topics);
-                    }
-                    final PeerSemanticTag peer = localContextCoordinates.getPeer();
-                    if (peer != null)
-                    {
-                        STSet peers = kb.getPeerSTSet().fragment(peer, peersFP);
-                        vocabulary.getPeerSTSet().merge(peers);
-                    }
-                    knowledge.addContextPoint(localContextPoint);
-                    kepConnection.insert(knowledge, senderAddresses);
-                    timestampList.resetTimestamp(sender);
-                    this.notifyInsertSent(this, knowledge);
+                    STSet peers = kb.getPeerSTSet().fragment(peer, peersFP);
+                    vocabulary.getPeerSTSet().merge(peers);
                 }
+                knowledge.addContextPoint(syncContextPoint);
             }
-        } else
-        {
-            throw new IllegalStateException("No ContextPoint found. Property AbstractSyncKP#SERIALIZED_CONTEXT_POINTS on identifier is null.");
         }
+        final String knowledgeAsString = L.knowledge2String(knowledge);
+        LoggingUtils.logBox("Sending knowledge", knowledgeAsString);
+        System.out.println("Hello World 0");
+        kepConnection.insert(knowledge, senderAddresses);
+        timestampList.resetTimestamp(sender);
+        this.notifyInsertSent(this, knowledge);
+        System.out.println("Hello World 1");
     }
 
     private List<SyncContextPoint> getOffer(final Date lastPeerMeeting) throws SharkKBException
     {
         final List<SyncContextPoint> syncContextPoints = new ArrayList<>();
         final Knowledge offer = getOffer();
-        LoggingUtil.debugBox("Knowledge from Offer.", L.knowledge2String(offer), this);
+        LoggingUtils.debugBox("Knowledge from Offer.", L.knowledge2String(offer), this);
         final Enumeration<ContextPoint> offeredContextPoints = offer.contextPoints();
         while (offeredContextPoints.hasMoreElements())
         {
@@ -300,7 +244,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
             }
         }
         final String offerString = L.knowledge2String(offer);
-        LoggingUtil.debugBox("Filtered Knowledge.", offerString, this);
+        LoggingUtils.debugBox("Filtered Knowledge.", offerString, this);
         return syncContextPoints;
     }
 
@@ -317,15 +261,5 @@ public abstract class AbstractSyncKP extends KnowledgePort
                 + ").",
                 this
         );
-    }
-
-    private String getProtocoleState(final SemanticTag identifier) throws SharkKBException
-    {
-        String protocolState = identifier.getProperty(PROTOCOL_STATE);
-        if (protocolState == null)
-        {
-            protocolState = PROTOCOL_STATE_NONE;
-        }
-        return protocolState;
     }
 }

@@ -17,16 +17,33 @@ import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoKnowledge;
 
 /**
+ * This class extract {@link Knowledge} form an {@link SharkKB} based on a
+ * {@link ContextSpaceDescriptor}. There are 3 ways of extraction. Extraction 
+ * of the context of a descriptor, extraction od its subtree and extraction of
+ * it whole tree.
  *
  * @author Nitros Razril (pseudonym)
  */
 public final class DescriptorAlgebra
 {
-
+    /**
+     * This class only has static methods.
+     */
     private DescriptorAlgebra()
     {
     }
 
+    /**
+     * Gets the {@link SharkCS} of the descriptor and passes it to
+     * {@link SharkCSAlgebra#extract(SharkKB, SharkCS)}. <br/>
+     * If the descriptor is empty. A {@link Knowledge} with no
+     * {@link ContextPoint} ist returned.
+     * 
+     * @param source The SharkKB to extract from.
+     * @param descriptor The descriptor describing the data.
+     * @return The exctracted Knowledge.
+     * @throws SharkKBException Any exception {@link SharkCSAlgebra#extract(SharkKB, SharkCS)} throws.
+     */
     public static Knowledge extract(final SharkKB source, final ContextSpaceDescriptor descriptor) throws SharkKBException
     {
         final SharkCS context = descriptor.getContext();
@@ -37,6 +54,15 @@ public final class DescriptorAlgebra
         return knowledge;
     }
 
+    /**
+     * Convenience method. Gets the {@link SharkKB} vom the schema and
+     * delegates to {@link #extract(SharkKB, ContextSpaceDescriptor)}.
+     * 
+     * @param schema Schema to get the {@link SharkKB} from.
+     * @param descriptor  The descriptor describing the data.
+     * @return The exctracted Knowledge.
+     * @throws SharkKBException SharkKBException Any exception {@link #extract(SharkKB, ContextSpaceDescriptor)} throws.
+     */
     public static Knowledge extract(final DescriptorSchema schema, final ContextSpaceDescriptor descriptor) throws SharkKBException
     {
         final SharkKB source = schema.getSharkKB();

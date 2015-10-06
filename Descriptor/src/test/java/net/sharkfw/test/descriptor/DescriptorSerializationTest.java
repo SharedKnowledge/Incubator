@@ -14,7 +14,7 @@ import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.system.L;
-import net.sharkfw.test.util.DescriptorDummyFactory;
+import net.sharkfw.test.util.DummyDataFactory;
 import net.sharkfw.xml.jaxb.JAXBSerializer;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,9 +32,9 @@ public class DescriptorSerializationTest extends AbstractDescriptorTest
     public void serializationAndDeserializationTest() throws SharkKBException, JAXBException
     {
         final List<ContextSpaceDescriptor> descriptors = new ArrayList<>();
-        final ContextSpaceDescriptor javaDescriptor = DescriptorDummyFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        final ContextSpaceDescriptor javaDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
         descriptors.add(javaDescriptor);
-        final ContextSpaceDescriptor teapotDescriptors = DescriptorDummyFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
+        final ContextSpaceDescriptor teapotDescriptors = DummyDataFactory.createSimpleDescriptor(TEAPOT_NAME, TEAPOT_SI);
         descriptors.add(teapotDescriptors);
 
         final JAXBSerializer serializer = SerializerFactroy.INSTANCE.getDescriptorSerializer();

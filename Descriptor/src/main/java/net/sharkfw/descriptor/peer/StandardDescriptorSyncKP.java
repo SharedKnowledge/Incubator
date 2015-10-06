@@ -7,7 +7,9 @@ package net.sharkfw.descriptor.peer;
 
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorAlgebra;
+import net.sharkfw.descriptor.knowledgeBase.SyncDescriptorSchema;
 import net.sharkfw.knowledgeBase.Knowledge;
+import net.sharkfw.knowledgeBase.PeerSTSet;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
@@ -21,14 +23,14 @@ import net.sharkfw.peer.SharkEngine;
 public class StandardDescriptorSyncKP extends AbstractDescriptorSyncKP
 {
 
-    public StandardDescriptorSyncKP(final SharkEngine sharkEngine, final SyncKB syncKB, final ContextSpaceDescriptor descriptor, final boolean lern)
+    public StandardDescriptorSyncKP(final SharkEngine sharkEngine, final SyncDescriptorSchema schema, final ContextSpaceDescriptor descriptor, final PeerSTSet recipients)
     {
-        super(sharkEngine, syncKB, descriptor, lern);
+        super(sharkEngine, schema, descriptor, recipients);
     }
 
-    public StandardDescriptorSyncKP(final SharkEngine sharkEngine, final SyncKB syncKB, final ContextSpaceDescriptor descriptor)
+    public StandardDescriptorSyncKP(final SharkEngine sharkEngine, final SyncDescriptorSchema schema, final ContextSpaceDescriptor descriptor)
     {
-        super(sharkEngine, syncKB, descriptor);
+        super(sharkEngine, schema, descriptor);
     }
 
     @Override
