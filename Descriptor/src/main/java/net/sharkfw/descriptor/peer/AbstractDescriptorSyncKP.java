@@ -1,6 +1,5 @@
 package net.sharkfw.descriptor.peer;
 
-import java.io.IOException;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
@@ -11,13 +10,14 @@ import net.sharkfw.knowledgeBase.PeerSemanticTag;
 import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
+import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
+import net.sharkfw.knowledgeBase.inmemory.InMemoSharkCS;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.knowledgeBase.sync.AbstractSyncKP;
 import net.sharkfw.peer.SharkEngine;
-import net.sharkfw.system.SharkSecurityException;
 import net.sharkfw.xml.jaxb.JAXBSerializer;
 
 /**
@@ -64,13 +64,23 @@ public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
         return deserialize(localContext);
     }
 
+    public void subscribe()
+    {
+        setDirection(SharkCS.DIRECTION_INOUT);
+    }
+
+    public void unsubscribe()
+    {
+        setDirection(SharkCS.DIRECTION_NOTHING);
+    }
+
     @Override
     protected boolean isInterested(final SharkCS context)
     {
         boolean interesed = isValidContext(context);
         if (interesed)
         {
-            
+
             final ContextSpaceDescriptor localDescriptor = getDescriptor();
             final ContextSpaceDescriptor remoteDescriptor = deserialize(context);
             interesed |= localDescriptor.equals(remoteDescriptor);
@@ -78,7 +88,6 @@ public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
         return interesed;
     }
 
-    @Override
     protected SemanticTag getIdentifier(final SharkCS context)
     {
         SemanticTag identifier = null;
@@ -182,5 +191,24 @@ public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
         {
             throw new IllegalArgumentException("Given ContextSpaceDescriptor could not be prepaird for this Knowlegde Port.", ex);
         }
+    }
+
+    private void setDirection(int direction)
+    {
+        if (direction != SharkCS.DIRECTION_INOUT || direction != SharkCS.DIRECTION_NOTHING)
+        {
+            throw new IllegalArgumentException("Not a valid direction. Can only set SharkCS.DIRECTION_INOUT or SharkCS.DIRECTION_NOTHING");
+        }
+        final SharkCS oldContext = getInterest();
+        final SharkCS newContext = new InMemoSharkKB().createInterest(
+                oldContext.getTopics(),
+                oldContext.getOriginator(),
+                oldContext.getPeers(),
+                oldContext.getRemotePeers(),
+                oldContext.getTimes(),
+                oldContext.getLocations(),
+                direction
+        );
+        this.interest = newContext;
     }
 }

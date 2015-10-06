@@ -36,6 +36,7 @@ import net.sharkfw.system.SharkSecurityException;
  */
 public abstract class AbstractSyncKP extends KnowledgePort
 {
+
     private final TimestampList timestampList;
     private final FragmentationParameter topicsFP;
     private final FragmentationParameter peersFP;
@@ -77,8 +78,6 @@ public abstract class AbstractSyncKP extends KnowledgePort
     protected abstract Knowledge getOffer() throws SharkKBException;
 
     protected abstract boolean isInterested(final SharkCS context);
-
-    protected abstract SemanticTag getIdentifier(final SharkCS context);
 
     /**
      * Inserts the received {@link Knowledge} into the local
@@ -142,9 +141,9 @@ public abstract class AbstractSyncKP extends KnowledgePort
         LoggingUtils.debugBox("Received Interest " + kb.getOwner().getName() + " :", L.contextSpace2String(context));
         try
         {
-            final SemanticTag identifier = getIdentifier(context);
+            //final SemanticTag identifier = getIdentifier(context);
             final boolean interested = isInterested(context);
-            if (isOKP() && identifier != null && interested)
+            if (isOKP() && interested)
             {
                 sendKnowledge(kepConnection);
             } else
@@ -153,11 +152,8 @@ public abstract class AbstractSyncKP extends KnowledgePort
                 if (!isOKP())
                 {
                     builder.append("This KnowledgePort does not send data. It is not a OKP.");
-                } else if (identifier == null)
-                {
-                    builder.append("Cannot proceed as no identifier was provided.").append(" ");
-                    builder.append("Method 'getIdentifier(SharkCS)' returns null.");
-                } else
+                } 
+                else
                 {
                     final String contextAsString = L.contextSpace2String(context);
                     builder.append("Not interested in given Interest.").append(" ");
