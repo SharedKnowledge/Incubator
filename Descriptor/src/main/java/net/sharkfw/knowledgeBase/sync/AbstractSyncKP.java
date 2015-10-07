@@ -37,6 +37,10 @@ import net.sharkfw.system.SharkSecurityException;
 public abstract class AbstractSyncKP extends KnowledgePort
 {
 
+    protected static final String ACTION_KEY = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_KEY";
+    protected static final String ACTION_PULL = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_PULL";
+    protected static final String ACTION_PULLREQUEST = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_PULLREQUEST";
+
     private final TimestampList timestampList;
     private final FragmentationParameter topicsFP;
     private final FragmentationParameter peersFP;
@@ -66,7 +70,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
         this(sharkEngine, syncKB, context, FragmentationParameter.getZeroFP(), FragmentationParameter.getZeroFP());
     }
 
-    public void send() throws SharkSecurityException, IOException
+    public void pull() throws SharkSecurityException, IOException
     {
         if (!se.isStarted())
         {
@@ -75,9 +79,40 @@ public abstract class AbstractSyncKP extends KnowledgePort
         se.publishKP(this);
     }
 
+    public void pullRequest() throws SharkKBException, SharkSecurityException, IOException  
+    {
+        if (!se.isStarted())
+        {
+            throw new IllegalStateException("Cannot send data without any open communication stubs on engine.");
+        }
+        setAction(ACTION_PULLREQUEST);
+        se.publishKP(this);
+        clearAction();
+    }
+
     protected abstract Knowledge getOffer() throws SharkKBException;
 
+    protected abstract SemanticTag getIdentifier(final SharkCS context);
+
     protected abstract boolean isInterested(final SharkCS context);
+
+    protected String getAction(final SharkCS context) throws SharkKBException
+    {
+        final SemanticTag identifier = getIdentifier(context);
+        final String actionProperty = identifier.getProperty(ACTION_KEY);
+        return (actionProperty == null) ? ACTION_PULL : actionProperty;
+    }
+
+    protected void setAction(final String action) throws SharkKBException
+    {
+        final SemanticTag identifier = getIdentifier(interest);
+        identifier.setProperty(ACTION_KEY, action);
+    }
+
+    protected void clearAction() throws SharkKBException
+    {
+        setAction(null);
+    }
 
     /**
      * Inserts the received {@link Knowledge} into the local
@@ -141,19 +176,28 @@ public abstract class AbstractSyncKP extends KnowledgePort
         LoggingUtils.debugBox("Received Interest " + kb.getOwner().getName() + " :", L.contextSpace2String(context));
         try
         {
-            //final SemanticTag identifier = getIdentifier(context);
             final boolean interested = isInterested(context);
             if (isOKP() && interested)
             {
-                sendKnowledge(kepConnection);
+                final String action = getAction(context);
+                switch (action)
+                {
+                    case ACTION_PULL:
+                        sendKnowledge(kepConnection);
+                        break;
+                    case ACTION_PULLREQUEST:
+                        pull();
+                        break;
+                    default:
+                        throw new IllegalArgumentException("No valid action found in SharkCS.");
+                }
             } else
             {
                 final StringBuilder builder = new StringBuilder();
                 if (!isOKP())
                 {
                     builder.append("This KnowledgePort does not send data. It is not a OKP.");
-                } 
-                else
+                } else
                 {
                     final String contextAsString = L.contextSpace2String(context);
                     builder.append("Not interested in given Interest.").append(" ");
@@ -163,14 +207,10 @@ public abstract class AbstractSyncKP extends KnowledgePort
                 final String debugMessage = builder.toString();
                 L.d(debugMessage, this);
             }
-        } catch (SharkException ex)
+        } catch (SharkException | IOException | IllegalArgumentException ex)
         {
             Logger.getLogger(AbstractSyncKP.class.getName()).log(Level.SEVERE, null, ex);
             throw new IllegalStateException("Exception occurred in doExpose.", ex);
-        } catch (Exception ex)
-        {
-            Logger.getLogger(AbstractSyncKP.class.getName()).log(Level.SEVERE, null, ex);
-            throw ex;
         }
     }
 
@@ -205,11 +245,9 @@ public abstract class AbstractSyncKP extends KnowledgePort
         }
         final String knowledgeAsString = L.knowledge2String(knowledge);
         LoggingUtils.logBox("Sending knowledge", knowledgeAsString);
-        System.out.println("Hello World 0");
         kepConnection.insert(knowledge, senderAddresses);
         timestampList.resetTimestamp(sender);
         this.notifyInsertSent(this, knowledge);
-        System.out.println("Hello World 1");
     }
 
     private List<SyncContextPoint> getOffer(final Date lastPeerMeeting) throws SharkKBException

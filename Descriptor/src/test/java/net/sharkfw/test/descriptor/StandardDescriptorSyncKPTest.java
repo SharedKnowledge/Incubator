@@ -5,6 +5,7 @@
  */
 package net.sharkfw.test.descriptor;
 
+import com.sun.xml.internal.ws.util.VersionUtil;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -15,6 +16,7 @@ import net.sharkfw.descriptor.peer.StandardDescriptorSyncKP;
 import net.sharkfw.kep.SharkProtocolNotSupportedException;
 import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.ContextPoint;
+import net.sharkfw.knowledgeBase.Information;
 import net.sharkfw.knowledgeBase.PeerSTSet;
 import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SemanticTag;
@@ -24,9 +26,8 @@ import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
+import net.sharkfw.knowledgeBase.sync.VersionUtils;
 import net.sharkfw.peer.SharkEngine;
-import net.sharkfw.system.L;
-import net.sharkfw.system.LoggingUtils;
 import net.sharkfw.system.SharkSecurityException;
 import net.sharkfw.test.util.Dummy;
 import net.sharkfw.test.util.DummyDataFactory;
@@ -57,7 +58,7 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
     }
 
     @Test
-    public void synchronisationTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, SharkSecurityException, IOException, InterruptedException
+    public void pullTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, SharkSecurityException, IOException, InterruptedException
     {
         final Dummy alice = new Dummy(ALICE_NAME, ALICE_SI);
         final SyncKB aliceKB = alice.getKnowledgeBase();
@@ -95,12 +96,10 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         final PeerSTSet aliceRecipients = new InMemoPeerSTSet();
         aliceRecipients.merge(bob.getPeer());
         final StandardDescriptorSyncKP alicePort = new StandardDescriptorSyncKP(aliceEngine, aliceSchema, multiDescriptor, aliceRecipients);
-        LoggingUtils.logBox("alice interest", L.contextSpace2String(alicePort.getInterest()));
 
         final PeerSTSet bobRecipients = new InMemoPeerSTSet();
         bobRecipients.merge(alice.getPeer());
         final StandardDescriptorSyncKP bobPort = new StandardDescriptorSyncKP(bobEngine, bobSchema, multiDescriptor, bobRecipients);
-        LoggingUtils.logBox("Bob interest", L.contextSpace2String(bobPort.getInterest()));
 
         aliceEngine.startTCP(alice.getPort());
         bobEngine.startTCP(bob.getPort());
@@ -110,7 +109,7 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         Assert.assertEquals(2, aliceCPSizeBefore);
         Assert.assertEquals(2, bobCPSizeBefore);
 
-        alicePort.send();
+        alicePort.pull();
         Thread.sleep(1000);
 
         final List<ContextPoint> aliceContextPointsAliceSync = Collections.list(aliceKB.getAllContextPoints());
@@ -131,14 +130,14 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         Assert.assertFalse(bobContextPointsAliceSync.contains(aliceCCP));
         Assert.assertFalse(bobContextPointsAliceSync.contains(aliceDeCP));
 
-        bobPort.send();
+        bobPort.pull();
         Thread.sleep(1000);
 
         final List<ContextPoint> aliceContextPointsBobSync = Collections.list(aliceKB.getAllContextPoints());
         final List<ContextPoint> bobContextPointsBobSync = Collections.list(bobKB.getAllContextPoints());
         final int aliceCPSizeAfterBobSync = aliceContextPointsBobSync.size();
         final int bobCPSizeAfterBobSync = bobContextPointsBobSync.size();
-        
+
         Assert.assertEquals(aliceCPSizeAfterAliceSync, aliceCPSizeAfterBobSync);
         Assert.assertEquals(bobCPSizeBefore + 2, bobCPSizeAfterBobSync);
 
@@ -146,7 +145,7 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         Assert.assertTrue(bobContextPointsBobSync.contains(aliceDeCP));
         Assert.assertTrue(bobContextPointsBobSync.contains(bobJavaCP));
         Assert.assertTrue(bobContextPointsBobSync.contains(bobTeapotCP));
-             
+
         Assert.assertTrue(aliceContextPointsBobSync.contains(aliceCCP));
         Assert.assertTrue(aliceContextPointsBobSync.contains(aliceDeCP));
         Assert.assertTrue(aliceContextPointsBobSync.contains(bobJavaCP));
@@ -154,5 +153,182 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
 
         aliceEngine.stopTCP();
         bobEngine.stopTCP();
+    }
+
+    @Test
+    public void pullRequestTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, IOException, SharkSecurityException, InterruptedException
+    {
+        final Dummy alice = new Dummy(ALICE_NAME, ALICE_SI);
+        final SyncKB aliceKB = alice.getKnowledgeBase();
+        final SharkEngine aliceEngine = alice.getEngine();
+        final SyncDescriptorSchema aliceSchema = new SyncDescriptorSchema(aliceKB);
+        final Dummy bob = new Dummy(BOB_NAME, BOB_SI);
+        final SyncKB bobKB = bob.getKnowledgeBase();
+        final SharkEngine bobEngine = bob.getEngine();
+        final SyncDescriptorSchema bobSchema = new SyncDescriptorSchema(bobKB);
+
+        final ContextPoint aliceCCP = DummyDataFactory.createSimpleContextPoint(aliceKB, cTopic);
+        final ContextPoint aliceDeCP = DummyDataFactory.createSimpleContextPoint(aliceKB, deTopic);
+        final ContextPoint bobJavaCP = DummyDataFactory.createSimpleContextPoint(bobKB, javaTopic);
+        final ContextPoint bobTeapotCP = DummyDataFactory.createSimpleContextPoint(bobKB, teapotTopic);
+
+        final STSet multiTopics = new InMemoSTSet();
+        multiTopics.merge(javaTopic);
+        multiTopics.merge(cTopic);
+        multiTopics.merge(deTopic);
+
+        final SharkCS multiContext = new InMemoSharkKB().createInterest(
+                multiTopics,
+                null,
+                null,
+                null,
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+
+        final ContextSpaceDescriptor multiDescriptor = new ContextSpaceDescriptor(multiContext, DESCRIPTOR_ID);
+        aliceSchema.saveDescriptor(multiDescriptor);
+        bobSchema.saveDescriptor(multiDescriptor);
+
+        final PeerSTSet aliceRecipients = new InMemoPeerSTSet();
+        aliceRecipients.merge(bob.getPeer());
+        final StandardDescriptorSyncKP alicePort = new StandardDescriptorSyncKP(aliceEngine, aliceSchema, multiDescriptor, aliceRecipients);
+
+        final PeerSTSet bobRecipients = new InMemoPeerSTSet();
+        bobRecipients.merge(alice.getPeer());
+        final StandardDescriptorSyncKP bobPort = new StandardDescriptorSyncKP(bobEngine, bobSchema, multiDescriptor, bobRecipients);
+
+        aliceEngine.startTCP(alice.getPort());
+        bobEngine.startTCP(bob.getPort());
+
+        final int aliceCPSizeBefore = Collections.list(aliceKB.getAllContextPoints()).size();
+        final int bobCPSizeBefore = Collections.list(bobKB.getAllContextPoints()).size();
+        Assert.assertEquals(2, aliceCPSizeBefore);
+        Assert.assertEquals(2, bobCPSizeBefore);
+
+        alicePort.pullRequest();
+        Thread.sleep(1000);
+
+        final List<ContextPoint> aliceContextPointsAliceSync = Collections.list(aliceKB.getAllContextPoints());
+        final List<ContextPoint> bobContextPointsAliceSync = Collections.list(bobKB.getAllContextPoints());
+        final int aliceCPSizeAfterAliceSync = aliceContextPointsAliceSync.size();
+        final int bobCPSizeAfterAliceSync = bobContextPointsAliceSync.size();
+
+        Assert.assertEquals(aliceCPSizeBefore, aliceCPSizeAfterAliceSync);
+        Assert.assertEquals(bobCPSizeBefore + 2, bobCPSizeAfterAliceSync);
+
+        Assert.assertTrue(aliceContextPointsAliceSync.contains(aliceCCP));
+        Assert.assertTrue(aliceContextPointsAliceSync.contains(aliceDeCP));
+        Assert.assertFalse(aliceContextPointsAliceSync.contains(bobJavaCP));
+        Assert.assertFalse(aliceContextPointsAliceSync.contains(bobTeapotCP));
+
+        Assert.assertTrue(bobContextPointsAliceSync.contains(aliceCCP));
+        Assert.assertTrue(bobContextPointsAliceSync.contains(aliceDeCP));
+        Assert.assertTrue(bobContextPointsAliceSync.contains(bobJavaCP));
+        Assert.assertTrue(bobContextPointsAliceSync.contains(bobTeapotCP));
+
+        bobPort.pullRequest();
+        Thread.sleep(1000);
+
+        final List<ContextPoint> aliceContextPointsBobSync = Collections.list(aliceKB.getAllContextPoints());
+        final List<ContextPoint> bobContextPointsBobSync = Collections.list(bobKB.getAllContextPoints());
+        final int aliceCPSizeAfterBobSync = aliceContextPointsBobSync.size();
+        final int bobCPSizeAfterBobSync = bobContextPointsBobSync.size();
+
+        Assert.assertEquals(aliceCPSizeBefore + 1, aliceCPSizeAfterBobSync);
+        Assert.assertEquals(bobCPSizeAfterAliceSync, bobCPSizeAfterBobSync);
+
+        Assert.assertTrue(aliceContextPointsBobSync.contains(aliceCCP));
+        Assert.assertTrue(aliceContextPointsBobSync.contains(aliceDeCP));
+        Assert.assertTrue(aliceContextPointsBobSync.contains(bobJavaCP));
+        Assert.assertFalse(aliceContextPointsBobSync.contains(bobTeapotCP));
+
+        Assert.assertTrue(bobContextPointsBobSync.contains(aliceCCP));
+        Assert.assertTrue(bobContextPointsBobSync.contains(aliceDeCP));
+        Assert.assertTrue(bobContextPointsBobSync.contains(bobJavaCP));
+        Assert.assertTrue(bobContextPointsBobSync.contains(bobTeapotCP));
+    }
+
+    public void updateTest() throws SharkKBException, DescriptorSchemaException, SharkSecurityException, IOException, InterruptedException
+    {
+        final Dummy alice = new Dummy(ALICE_NAME, ALICE_SI);
+        final SyncKB aliceKB = alice.getKnowledgeBase();
+        final SharkEngine aliceEngine = alice.getEngine();
+        final SyncDescriptorSchema aliceSchema = new SyncDescriptorSchema(aliceKB);
+        final Dummy bob = new Dummy(BOB_NAME, BOB_SI);
+        final SyncKB bobKB = bob.getKnowledgeBase();
+        final SharkEngine bobEngine = bob.getEngine();
+        final SyncDescriptorSchema bobSchema = new SyncDescriptorSchema(bobKB);
+
+        final ContextCoordinates javaCC = new InMemoSharkKB().createContextCoordinates(
+                javaTopic,
+                null,
+                null,
+                null,
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+
+        final ContextPoint aliceJavaCP = aliceKB.createContextPoint(javaCC);
+        final ContextPoint bobJavaCP = bobKB.createContextPoint(javaCC);
+        bobJavaCP.addInformation(DummyDataFactory.TEST_INFORMATION);
+
+        final STSet javaTopics = new InMemoSTSet();
+        javaTopics.merge(javaTopic);
+
+        final SharkCS javaContext = new InMemoSharkKB().createInterest(
+                javaTopics,
+                null,
+                null,
+                null,
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+
+        final ContextSpaceDescriptor javaDescriptor = new ContextSpaceDescriptor(javaContext, DESCRIPTOR_ID);
+        aliceSchema.saveDescriptor(javaDescriptor);
+        bobSchema.saveDescriptor(javaDescriptor);
+
+        final PeerSTSet aliceRecipients = new InMemoPeerSTSet();
+        aliceRecipients.merge(bob.getPeer());
+        final StandardDescriptorSyncKP alicePort = new StandardDescriptorSyncKP(aliceEngine, aliceSchema, javaDescriptor, aliceRecipients);
+
+        final PeerSTSet bobRecipients = new InMemoPeerSTSet();
+        bobRecipients.merge(alice.getPeer());
+        final StandardDescriptorSyncKP bobPort = new StandardDescriptorSyncKP(bobEngine, bobSchema, javaDescriptor, bobRecipients);
+
+        alicePort.pull();
+        Thread.sleep(1000);
+
+        final ContextPoint aliceJavaCPAliceSync = aliceKB.getContextPoint(javaCC);
+
+        Assert.assertNotNull(aliceJavaCPAliceSync);
+        Assert.assertTrue(aliceJavaCPAliceSync.equals(bobJavaCP));
+        Assert.assertEquals(1, aliceJavaCPAliceSync.getNumberInformation());
+        Assert.assertEquals(bobJavaCP.getNumberInformation(), aliceJavaCPAliceSync.getNumberInformation());
+        final Information aliceInfoAliceSync = aliceJavaCPAliceSync.getInformation().next();
+        final Information bobInfo = bobJavaCP.getInformation().next();
+        Assert.assertTrue(bobInfo.equals(aliceInfoAliceSync));
+        Assert.assertEquals(VersionUtils.getVersion(bobJavaCP), VersionUtils.getVersion(aliceJavaCPAliceSync));
+
+        bobPort.pull();
+        Thread.sleep(1000);
+
+        final ContextPoint bobJavaCPBobSync = bobKB.getContextPoint(javaCC);
+
+        Assert.assertNotNull(bobJavaCPBobSync);
+        Assert.assertTrue(bobJavaCPBobSync.equals(bobJavaCP));
+        Assert.assertTrue(bobJavaCPBobSync.equals(aliceJavaCPAliceSync));
+        Assert.assertEquals(1, bobJavaCPBobSync.getNumberInformation());
+        Assert.assertEquals(bobJavaCP.getNumberInformation(), bobJavaCPBobSync.getNumberInformation());
+        Assert.assertEquals(aliceJavaCPAliceSync.getNumberInformation(), bobJavaCPBobSync.getNumberInformation());
+        final Information bobInfoBobSync = bobJavaCPBobSync.getInformation().next();
+        Assert.assertTrue(bobInfo.equals(bobInfoBobSync));
+        Assert.assertTrue(aliceInfoAliceSync.equals(bobInfoBobSync));
+        Assert.assertEquals(VersionUtils.getVersion(bobJavaCP), VersionUtils.getVersion(bobJavaCPBobSync));
+        Assert.assertEquals(VersionUtils.getVersion(aliceJavaCPAliceSync), VersionUtils.getVersion(bobJavaCPBobSync));
     }
 }
