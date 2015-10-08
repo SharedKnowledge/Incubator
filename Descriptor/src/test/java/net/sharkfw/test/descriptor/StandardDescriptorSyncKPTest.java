@@ -5,7 +5,6 @@
  */
 package net.sharkfw.test.descriptor;
 
-import com.sun.xml.internal.ws.util.VersionUtil;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +17,7 @@ import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.Information;
 import net.sharkfw.knowledgeBase.PeerSTSet;
+import net.sharkfw.knowledgeBase.PeerSemanticTag;
 import net.sharkfw.knowledgeBase.STSet;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
@@ -248,9 +248,13 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         Assert.assertTrue(bobContextPointsBobSync.contains(aliceDeCP));
         Assert.assertTrue(bobContextPointsBobSync.contains(bobJavaCP));
         Assert.assertTrue(bobContextPointsBobSync.contains(bobTeapotCP));
+
+        aliceEngine.stopTCP();
+        bobEngine.stopTCP();
     }
 
-    public void updateTest() throws SharkKBException, DescriptorSchemaException, SharkSecurityException, IOException, InterruptedException
+    @Test
+    public void updateTest() throws SharkKBException, DescriptorSchemaException, SharkSecurityException, IOException, InterruptedException, SharkProtocolNotSupportedException
     {
         final Dummy alice = new Dummy(ALICE_NAME, ALICE_SI);
         final SyncKB aliceKB = alice.getKnowledgeBase();
@@ -271,7 +275,7 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
                 SharkCS.DIRECTION_INOUT
         );
 
-        final ContextPoint aliceJavaCP = aliceKB.createContextPoint(javaCC);
+        aliceKB.createContextPoint(javaCC);
         final ContextPoint bobJavaCP = bobKB.createContextPoint(javaCC);
         bobJavaCP.addInformation(DummyDataFactory.TEST_INFORMATION);
 
@@ -300,6 +304,9 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         bobRecipients.merge(alice.getPeer());
         final StandardDescriptorSyncKP bobPort = new StandardDescriptorSyncKP(bobEngine, bobSchema, javaDescriptor, bobRecipients);
 
+        aliceEngine.startTCP(alice.getPort());
+        bobEngine.startTCP(bob.getPort());
+
         alicePort.pull();
         Thread.sleep(1000);
 
@@ -311,7 +318,9 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         Assert.assertEquals(bobJavaCP.getNumberInformation(), aliceJavaCPAliceSync.getNumberInformation());
         final Information aliceInfoAliceSync = aliceJavaCPAliceSync.getInformation().next();
         final Information bobInfo = bobJavaCP.getInformation().next();
-        Assert.assertTrue(bobInfo.equals(aliceInfoAliceSync));
+        Assert.assertNotNull(aliceInfoAliceSync);
+        Assert.assertNotNull(bobInfo);
+        Assert.assertTrue(bobInfo.getContentAsString().equals(aliceInfoAliceSync.getContentAsString()));
         Assert.assertEquals(VersionUtils.getVersion(bobJavaCP), VersionUtils.getVersion(aliceJavaCPAliceSync));
 
         bobPort.pull();
@@ -326,9 +335,161 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         Assert.assertEquals(bobJavaCP.getNumberInformation(), bobJavaCPBobSync.getNumberInformation());
         Assert.assertEquals(aliceJavaCPAliceSync.getNumberInformation(), bobJavaCPBobSync.getNumberInformation());
         final Information bobInfoBobSync = bobJavaCPBobSync.getInformation().next();
-        Assert.assertTrue(bobInfo.equals(bobInfoBobSync));
-        Assert.assertTrue(aliceInfoAliceSync.equals(bobInfoBobSync));
+        Assert.assertTrue(bobInfo.getContentAsString().equals(bobInfoBobSync.getContentAsString()));
+        Assert.assertTrue(aliceInfoAliceSync.getContentAsString().equals(bobInfoBobSync.getContentAsString()));
         Assert.assertEquals(VersionUtils.getVersion(bobJavaCP), VersionUtils.getVersion(bobJavaCPBobSync));
         Assert.assertEquals(VersionUtils.getVersion(aliceJavaCPAliceSync), VersionUtils.getVersion(bobJavaCPBobSync));
+
+        aliceEngine.stopTCP();
+        bobEngine.stopTCP();
+    }
+
+    @Test
+    public void syncDescriptorTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, IOException, SharkSecurityException, InterruptedException
+    {
+        final Dummy alice = new Dummy(ALICE_NAME, ALICE_SI);
+        final SyncKB aliceKB = alice.getKnowledgeBase();
+        final SharkEngine aliceEngine = alice.getEngine();
+        final SyncDescriptorSchema aliceSchema = new SyncDescriptorSchema(aliceKB);
+        final Dummy bob = new Dummy(BOB_NAME, BOB_SI);
+        final SyncKB bobKB = bob.getKnowledgeBase();
+        final SharkEngine bobEngine = bob.getEngine();
+        final SyncDescriptorSchema bobSchema = new SyncDescriptorSchema(bobKB);
+
+        final ContextSpaceDescriptor aliceDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        aliceSchema.saveDescriptor(aliceDescriptor);
+        final ContextSpaceDescriptor bobDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        bobSchema.saveDescriptor(bobDescriptor);
+
+        Assert.assertTrue(aliceDescriptor.identical(bobDescriptor));
+
+        final PeerSTSet aliceRecipients = new InMemoPeerSTSet();
+        aliceRecipients.merge(bob.getPeer());
+        final StandardDescriptorSyncKP alicePort = new StandardDescriptorSyncKP(aliceEngine, aliceSchema, aliceDescriptor, aliceRecipients);
+
+        final PeerSTSet bobRecipients = new InMemoPeerSTSet();
+        bobRecipients.merge(alice.getPeer());
+        final StandardDescriptorSyncKP bobPort = new StandardDescriptorSyncKP(bobEngine, bobSchema, bobDescriptor, bobRecipients);
+
+        final SemanticTag aliceJavaBefore = alicePort.getDescriptor().getContext().getTopics().getSemanticTag(JAVA_SI);
+        final SemanticTag bobJavaBefore = bobPort.getDescriptor().getContext().getTopics().getSemanticTag(JAVA_SI);
+        final SemanticTag aliceCBefore = alicePort.getDescriptor().getContext().getTopics().getSemanticTag(C_SI);
+        final SemanticTag bobCBefore = bobPort.getDescriptor().getContext().getTopics().getSemanticTag(C_SI);
+
+        Assert.assertNotNull(aliceJavaBefore);
+        Assert.assertNotNull(bobJavaBefore);
+        Assert.assertNull(aliceCBefore);
+        Assert.assertNull(bobCBefore);
+
+        final ContextSpaceDescriptor descriptorWithC = alicePort.getDescriptor();
+        descriptorWithC.getContext().getTopics().createSemanticTag(C_NAME, C_SI);
+        aliceSchema.overrideDescriptor(descriptorWithC);
+        alicePort.setDescriptor(descriptorWithC);
+
+        final SemanticTag aliceJavaBetween = alicePort.getDescriptor().getContext().getTopics().getSemanticTag(JAVA_SI);
+        final SemanticTag bobJavaBetween = bobPort.getDescriptor().getContext().getTopics().getSemanticTag(JAVA_SI);
+        final SemanticTag aliceCBetween = alicePort.getDescriptor().getContext().getTopics().getSemanticTag(C_SI);
+        final SemanticTag bobCBetween = bobPort.getDescriptor().getContext().getTopics().getSemanticTag(C_SI);
+
+        Assert.assertNotNull(aliceJavaBetween);
+        Assert.assertNotNull(bobJavaBetween);
+        Assert.assertNotNull(aliceCBetween);
+        Assert.assertNull(bobCBetween);
+
+        aliceEngine.startTCP(alice.getPort());
+        bobEngine.startTCP(bob.getPort());
+
+        alicePort.sendDescriptor();
+        Thread.sleep(1000);
+
+        final SemanticTag aliceJavaAfter = alicePort.getDescriptor().getContext().getTopics().getSemanticTag(JAVA_SI);
+        final SemanticTag bobJavaAfter = bobPort.getDescriptor().getContext().getTopics().getSemanticTag(JAVA_SI);
+        final SemanticTag aliceCAfter = alicePort.getDescriptor().getContext().getTopics().getSemanticTag(C_SI);
+        final SemanticTag bobCAfter = bobPort.getDescriptor().getContext().getTopics().getSemanticTag(C_SI);
+
+        Assert.assertNotNull(aliceJavaAfter);
+        Assert.assertNotNull(bobJavaAfter);
+        Assert.assertNotNull(aliceCAfter);
+        Assert.assertNotNull(bobCAfter);
+
+        aliceEngine.stopTCP();
+        bobEngine.stopTCP();
+    }
+
+    @Test
+    public void recipientsChangeTest() throws SharkKBException, DescriptorSchemaException, SharkSecurityException, SharkProtocolNotSupportedException, IOException, InterruptedException
+    {
+
+        final Dummy alice = new Dummy(ALICE_NAME, ALICE_SI);
+        final SyncKB aliceKB = alice.getKnowledgeBase();
+        final SharkEngine aliceEngine = alice.getEngine();
+        final SyncDescriptorSchema aliceSchema = new SyncDescriptorSchema(aliceKB);
+        final Dummy bob = new Dummy(BOB_NAME, BOB_SI);
+        final SyncKB bobKB = bob.getKnowledgeBase();
+        final SharkEngine bobEngine = bob.getEngine();
+        final SyncDescriptorSchema bobSchema = new SyncDescriptorSchema(bobKB);
+        final Dummy eve = new Dummy(EVE_NAME, EVE_SI);
+
+        final ContextSpaceDescriptor aliceDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        aliceSchema.saveDescriptor(aliceDescriptor);
+        final ContextSpaceDescriptor bobDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        bobSchema.saveDescriptor(bobDescriptor);
+
+        Assert.assertTrue(aliceDescriptor.identical(bobDescriptor));
+
+        final PeerSTSet aliceRecipients = new InMemoPeerSTSet();
+        aliceRecipients.merge(bob.getPeer());
+        aliceRecipients.merge(eve.getPeer());
+        final StandardDescriptorSyncKP alicePort = new StandardDescriptorSyncKP(aliceEngine, aliceSchema, aliceDescriptor, aliceRecipients);
+
+        final PeerSTSet bobRecipients = new InMemoPeerSTSet();
+        bobRecipients.merge(alice.getPeer());
+        bobRecipients.merge(eve.getPeer());
+        final StandardDescriptorSyncKP bobPort = new StandardDescriptorSyncKP(bobEngine, bobSchema, bobDescriptor, bobRecipients);
+
+        aliceEngine.startTCP(alice.getPort());
+        bobEngine.startTCP(bob.getPort());
+
+        Assert.assertEquals(2, alicePort.getRecipients().size());
+        Assert.assertEquals(2, bobPort.getRecipients().size());
+
+        alicePort.removeRecipient(eve.getPeer());
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, alicePort.getRecipients().size());
+        Assert.assertEquals(1, bobPort.getRecipients().size());
+
+        final PeerSemanticTag aliceEveRemoved = alicePort.getRecipients().getSemanticTag(eve.getPeer().getSI());
+        final PeerSemanticTag bobEveRemoved = bobPort.getRecipients().getSemanticTag(eve.getPeer().getSI());
+
+        Assert.assertNull(aliceEveRemoved);
+        Assert.assertNull(bobEveRemoved);
+
+        bobPort.addRecipient(eve.getPeer());
+        Thread.sleep(1000);
+
+        Assert.assertEquals(2, alicePort.getRecipients().size());
+        Assert.assertEquals(2, bobPort.getRecipients().size());
+
+        final PeerSemanticTag aliceEveAdded = alicePort.getRecipients().getSemanticTag(eve.getPeer().getSI());
+        final PeerSemanticTag bobEveAdded = bobPort.getRecipients().getSemanticTag(eve.getPeer().getSI());
+
+        Assert.assertNotNull(aliceEveAdded);
+        Assert.assertNotNull(bobEveAdded);
+
+        bobPort.removeRecipient(alice.getPeer());
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, alicePort.getRecipients().size());
+        Assert.assertEquals(1, bobPort.getRecipients().size());
+
+        final PeerSemanticTag aliceAliceRemoved = alicePort.getRecipients().getSemanticTag(bob.getPeer().getSI());
+        final PeerSemanticTag bobAliceRemoved = bobPort.getRecipients().getSemanticTag(alice.getPeer().getSI());
+
+        Assert.assertNull(aliceAliceRemoved);
+        Assert.assertNull(bobAliceRemoved);
+
+        aliceEngine.stopTCP();
+        bobEngine.stopTCP();
     }
 }

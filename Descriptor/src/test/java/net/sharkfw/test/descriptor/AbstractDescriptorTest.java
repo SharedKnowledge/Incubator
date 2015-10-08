@@ -17,6 +17,8 @@ public abstract class AbstractDescriptorTest
     protected static final String ALICE_SI = "http://www.sharksystem.net/alice.html";
     protected static final String BOB_NAME = "Bob";
     protected static final String BOB_SI = "http://www.sharksystem.net/bob.html";
+    protected static final String EVE_NAME = "EVE";
+    protected static final String EVE_SI = "http://www.sharksystem.net/eve.html";
 
     protected static final String TEAPOT_NAME = "teapot";
     protected static final String TEAPOT_SI = "https://en.wikipedia.org/?title=Teapot";

@@ -8,20 +8,31 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javafx.print.Collation;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
+import net.sharkfw.descriptor.knowledgeBase.DescriptorAlgebra;
+import net.sharkfw.knowledgeBase.ContextCoordinates;
+import net.sharkfw.knowledgeBase.ContextPoint;
+import net.sharkfw.knowledgeBase.Information;
+import net.sharkfw.knowledgeBase.Knowledge;
+import net.sharkfw.knowledgeBase.STSet;
+import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
+import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
 import net.sharkfw.system.L;
 import static net.sharkfw.test.descriptor.AbstractDescriptorTest.JAVA_NAME;
+import net.sharkfw.test.util.Dummy;
 import net.sharkfw.test.util.DummyDataFactory;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -35,6 +46,8 @@ import org.junit.Test;
 public class DescriptorSchemaTest extends AbstractDescriptorTest
 {
 
+    private final static String FIRST_EMPTY_ID = "FIRST_EMPTY";
+    private final static String SECOND_EMPTY_ID = "SECOND_EMPTY";
     private static final int NOT_FOUND = -1;
 
     private static final String TEST_DIRECTORY = System.getProperty("user.home") + File.separator + "__tmp_shark_test_kb";
@@ -261,4 +274,137 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         Assert.assertFalse(schema.containsIdentical(javaNotIdeticalDescriptor));
     }
 
+    /**
+     * <table border="1">
+     * <tr><td align="center" colspan="2">Deutschland</td></tr>
+     * <tr><td align="center" colspan="2">First Empty Descriptor</td></tr>
+     * <tr><td align="center" colspan="2">Java</td></tr>
+     * <tr>
+     * <td align="center">Second Empty Descriptor</td>
+     * <td align="center">Teapot</td>
+     * </tr>
+     * <tr>
+     * <td align="center">C</td>
+     * <td align="center"></td>
+     * </tr>
+     * </table>
+     */
+    @Test
+    public void treeTest() throws SharkKBException, DescriptorSchemaException
+    {
+
+        final SharkKB sharkKB = new Dummy(ALICE_NAME, ALICE_SI).getKnowledgeBase();
+        final DescriptorSchema schema = new DescriptorSchema(sharkKB);
+
+        final STSet javaSet = new InMemoSTSet();
+        javaSet.createSemanticTag(JAVA_NAME, JAVA_SI);
+
+        final STSet teapotSet = new InMemoSTSet();
+        teapotSet.createSemanticTag(TEAPOT_NAME, TEAPOT_SI);
+
+        final STSet cSet = new InMemoSTSet();
+        cSet.createSemanticTag(C_NAME, C_SI);
+
+        final STSet deutschlandSet = new InMemoSTSet();
+        deutschlandSet.createSemanticTag(DEUTSCHLAND_NAME, DEUTSCHLAND_SI);
+
+        final SharkCS javaContext = new InMemoSharkKB().createInterest(
+                javaSet,
+                null,
+                null,
+                null,
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+        final ContextSpaceDescriptor javaDescriptor = new ContextSpaceDescriptor(javaContext, JAVA_SI);
+        schema.saveDescriptor(javaDescriptor);
+
+        final SharkCS teapotContext = new InMemoSharkKB().createInterest(
+                teapotSet,
+                null,
+                null,
+                null,
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+        final ContextSpaceDescriptor teapotDescriptor = new ContextSpaceDescriptor(teapotContext, TEAPOT_SI);
+        schema.saveDescriptor(teapotDescriptor);
+
+        final SharkCS cContext = new InMemoSharkKB().createInterest(
+                cSet,
+                null,
+                null,
+                null,
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+        final ContextSpaceDescriptor cDescriptor = new ContextSpaceDescriptor(cContext, C_SI);
+        schema.saveDescriptor(cDescriptor);
+
+        final SharkCS deuschlandContext = new InMemoSharkKB().createInterest(
+                deutschlandSet,
+                null,
+                null,
+                null,
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+
+        final ContextSpaceDescriptor deutschlandDescriptor = new ContextSpaceDescriptor(deuschlandContext, DEUTSCHLAND_SI);
+        schema.saveDescriptor(deutschlandDescriptor);
+        final ContextSpaceDescriptor firstEmptyDescriptor = new ContextSpaceDescriptor(FIRST_EMPTY_ID);
+        schema.saveDescriptor(firstEmptyDescriptor);
+        final ContextSpaceDescriptor secondEmptyDescriptor = new ContextSpaceDescriptor(SECOND_EMPTY_ID);
+        schema.saveDescriptor(secondEmptyDescriptor);
+
+        schema.addChild(deutschlandDescriptor, firstEmptyDescriptor);
+        schema.setParent(javaDescriptor, firstEmptyDescriptor);
+        schema.addChild(javaDescriptor, teapotDescriptor);
+        schema.addChild(javaDescriptor, secondEmptyDescriptor);
+        schema.setParent(cDescriptor, secondEmptyDescriptor);
+
+        final Set<ContextSpaceDescriptor> tree = schema.getTree(teapotDescriptor);
+        Assert.assertTrue(tree.contains(teapotDescriptor));
+        Assert.assertTrue(tree.contains(javaDescriptor));
+        Assert.assertTrue(tree.contains(cDescriptor));
+        Assert.assertTrue(tree.contains(secondEmptyDescriptor));
+        Assert.assertTrue(tree.contains(firstEmptyDescriptor));
+        Assert.assertTrue(tree.contains(deutschlandDescriptor));
+
+        final Set<ContextSpaceDescriptor> subtree = schema.getSubtree(javaDescriptor);
+        Assert.assertTrue(subtree.contains(teapotDescriptor));
+        Assert.assertTrue(subtree.contains(javaDescriptor));
+        Assert.assertTrue(subtree.contains(cDescriptor));
+        Assert.assertTrue(subtree.contains(secondEmptyDescriptor));
+        Assert.assertFalse(subtree.contains(firstEmptyDescriptor));
+        Assert.assertFalse(subtree.contains(deutschlandDescriptor));
+    }
+
+    @Test
+    public void overrideTest() throws SharkKBException, DescriptorSchemaException
+    {
+        final SharkKB sharkKB = new Dummy(ALICE_NAME, ALICE_SI).getKnowledgeBase();
+        final DescriptorSchema schema = new DescriptorSchema(sharkKB);
+
+        final ContextSpaceDescriptor firstDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        schema.saveDescriptor(firstDescriptor);
+        final ContextSpaceDescriptor secondDescriptor = DummyDataFactory.createSimpleDescriptor(JAVA_NAME, JAVA_SI);
+        secondDescriptor.getContext().getTopics().createSemanticTag(C_NAME, C_SI);
+
+        Assert.assertTrue(schema.containsIdentical(firstDescriptor));
+        Assert.assertFalse(schema.containsIdentical(secondDescriptor));
+        Assert.assertTrue(schema.contains(firstDescriptor));
+        Assert.assertTrue(schema.contains(secondDescriptor));
+
+        schema.overrideDescriptor(secondDescriptor);
+
+        Assert.assertFalse(schema.containsIdentical(firstDescriptor));
+        Assert.assertTrue(schema.containsIdentical(secondDescriptor));
+        Assert.assertTrue(schema.contains(firstDescriptor));
+        Assert.assertTrue(schema.contains(secondDescriptor));
+    }
 }

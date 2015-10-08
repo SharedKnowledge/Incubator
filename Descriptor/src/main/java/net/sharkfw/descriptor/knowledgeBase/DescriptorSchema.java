@@ -148,6 +148,29 @@ public class DescriptorSchema
         saveDescriptor(descriptor);
     }
 
+    public Set<ContextSpaceDescriptor> getTree(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
+    {
+        ContextSpaceDescriptor root = descriptor;
+        while (root.hasParent())
+        {
+            root = getParent(root);
+        }
+        return getSubtree(root);
+    }
+
+    public Set<ContextSpaceDescriptor> getSubtree(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
+    {
+        final Set<ContextSpaceDescriptor> tree = new HashSet<>();
+        tree.add(descriptor);
+        final Set<ContextSpaceDescriptor> children = getChildren(descriptor);
+        for (ContextSpaceDescriptor child : children)
+        {
+            final Set<ContextSpaceDescriptor> childTree = getSubtree(child);
+            tree.addAll(childTree);
+        }
+        return tree;
+    }
+
     public boolean saveDescriptor(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         Set<ContextSpaceDescriptor> singelton = Collections.singleton(descriptor);
@@ -180,6 +203,18 @@ public class DescriptorSchema
             writeDescriptors(existingDescriptors);
         }
         return changed;
+    }
+
+    public boolean overrideDescriptor(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
+    {
+        Set<ContextSpaceDescriptor> singelton = Collections.singleton(descriptor);
+        return overrideDescriptors(singelton);
+    }
+
+    public boolean overrideDescriptors(final Collection<ContextSpaceDescriptor> descriptors) throws DescriptorSchemaException
+    {
+        removeDescriptors(descriptors);
+        return saveDescriptors(descriptors);
     }
 
     public void clearDescriptors() throws DescriptorSchemaException

@@ -139,6 +139,9 @@
                         <includes>
                             <include>net/sharkfw/descriptor/**/*.class</include>
                             <include>net/sharkfw/test/descriptor/**/*.class</include>
+                            <include>net/sharkfw/knowledgeBase/sync/AbstractSyncKP.class</include>
+                            <include>net/sharkfw/knowledgeBase/sync/VersionUtils.class</include>
+                            <include>net/sharkfw/xml/jaxb/**/*.class</include>
                         </includes>
                     </instrumentation>
                 </configuration>

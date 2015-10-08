@@ -37,9 +37,9 @@ import net.sharkfw.system.SharkSecurityException;
 public abstract class AbstractSyncKP extends KnowledgePort
 {
 
-    protected static final String ACTION_KEY = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_KEY";
-    protected static final String ACTION_PULL = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_PULL";
-    protected static final String ACTION_PULLREQUEST = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_PULLREQUEST";
+    private static final String ACTION_KEY = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_KEY";
+    private static final String ACTION_PULL = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_PULL";
+    private static final String ACTION_PULLREQUEST = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_PULLREQUEST";
 
     private final TimestampList timestampList;
     private final FragmentationParameter topicsFP;
@@ -79,7 +79,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
         se.publishKP(this);
     }
 
-    public void pullRequest() throws SharkKBException, SharkSecurityException, IOException  
+    public void pullRequest() throws SharkKBException, SharkSecurityException, IOException
     {
         if (!se.isStarted())
         {
@@ -94,7 +94,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
 
     protected abstract SemanticTag getIdentifier(final SharkCS context);
 
-    protected abstract boolean isInterested(final SharkCS context);
+    protected abstract boolean isInterested(final SharkCS context, final KEPConnection kepConnection);
 
     protected String getAction(final SharkCS context) throws SharkKBException
     {
@@ -112,6 +112,11 @@ public abstract class AbstractSyncKP extends KnowledgePort
     protected void clearAction() throws SharkKBException
     {
         setAction(null);
+    }
+
+    protected void doAction(final String action, final SharkCS context, final KEPConnection kepConnection)
+    {
+        throw new IllegalArgumentException("No valid action found in SharkCS.");
     }
 
     /**
@@ -176,7 +181,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
         LoggingUtils.debugBox("Received Interest " + kb.getOwner().getName() + " :", L.contextSpace2String(context));
         try
         {
-            final boolean interested = isInterested(context);
+            final boolean interested = isInterested(context, kepConnection);
             if (isOKP() && interested)
             {
                 final String action = getAction(context);
@@ -189,7 +194,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
                         pull();
                         break;
                     default:
-                        throw new IllegalArgumentException("No valid action found in SharkCS.");
+                        doAction(action, context, kepConnection);
                 }
             } else
             {
