@@ -3,16 +3,11 @@ package net.sharkfw.descriptor.peer;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.management.Descriptor;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
-import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
 import net.sharkfw.descriptor.knowledgeBase.SyncDescriptorSchema;
 import net.sharkfw.kep.format.SerializerFactroy;
-import net.sharkfw.knowledgeBase.Interest;
 import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.PeerSTSet;
 import net.sharkfw.knowledgeBase.PeerSemanticTag;
@@ -92,6 +87,11 @@ public class DescriptorAssimilationKP extends KnowledgePort
         return schema;
     }
 
+    protected boolean isInterested(final SharkCS context)
+    {
+        return true;
+    }
+
     @Override
     protected void doInsert(final Knowledge knowledge, final KEPConnection kepConnection)
     {
@@ -104,7 +104,7 @@ public class DescriptorAssimilationKP extends KnowledgePort
         try
         {
             final SemanticTag metadataTag = getMetadataTag(context);
-            if (metadataTag != null)
+            if (metadataTag != null && isInterested(context))
             {
                 final String xml = metadataTag.getProperty(DESCRIPTOR_LIST);
                 if (xml != null && !xml.isEmpty())
