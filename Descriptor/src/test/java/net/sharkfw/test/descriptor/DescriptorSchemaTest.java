@@ -8,22 +8,14 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import javafx.print.Collation;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
-import net.sharkfw.descriptor.knowledgeBase.DescriptorAlgebra;
-import net.sharkfw.knowledgeBase.ContextCoordinates;
-import net.sharkfw.knowledgeBase.ContextPoint;
-import net.sharkfw.knowledgeBase.Information;
-import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.STSet;
-import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKB;
@@ -49,67 +41,6 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
     private final static String FIRST_EMPTY_ID = "FIRST_EMPTY";
     private final static String SECOND_EMPTY_ID = "SECOND_EMPTY";
     private static final int NOT_FOUND = -1;
-
-    private static final String TEST_DIRECTORY = System.getProperty("user.home") + File.separator + "__tmp_shark_test_kb";
-
-    private static final SimpleFileVisitor<Path> DELETE_VISITOR = new SimpleFileVisitor<Path>()
-    {
-        @Override
-        public FileVisitResult visitFile(final Path file, final BasicFileAttributes attributes) throws IOException
-        {
-            Files.delete(file);
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFileFailed(final Path file, final IOException ex) throws IOException
-        {
-            // try to delete the file anyway, even if its attributes
-            // could not be read, since delete-only access is theoretically possible
-            Files.delete(file);
-            return FileVisitResult.CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult postVisitDirectory(final Path dir, final IOException ex) throws IOException
-        {
-            if (ex == null)
-            {
-                Files.delete(dir);
-                return FileVisitResult.CONTINUE;
-            } else
-            {
-                // directory iteration failed; propagate exception
-                throw ex;
-            }
-        }
-    };
-
-    @BeforeClass
-    public static void setUpClass()
-    {
-        final File file = new File(TEST_DIRECTORY);
-        if (file.exists() && file.isDirectory())
-        {
-            throw new IllegalStateException("Cannot create knowledge base on filesystem. File '" + TEST_DIRECTORY + "' already exitsts.");
-        }
-        final boolean success = file.mkdirs();
-        if (!success)
-        {
-            throw new IllegalStateException("Cannot create knowledge base on filesystem. Method File#mkdirs() failed.");
-        }
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws IOException
-    {
-        final File file = new File(TEST_DIRECTORY);
-        if (file.exists() && file.isDirectory())
-        {
-            final Path path = file.toPath();
-            Files.walkFileTree(path, DELETE_VISITOR);
-        }
-    }
 
     @Test
     public void saveAndLoadTest() throws SharkKBException, JAXBException, DescriptorSchemaException

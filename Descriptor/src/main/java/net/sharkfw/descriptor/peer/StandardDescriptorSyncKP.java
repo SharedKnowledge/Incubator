@@ -5,12 +5,9 @@
  */
 package net.sharkfw.descriptor.peer;
 
-import com.sun.javafx.scene.control.skin.VirtualFlow;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorAlgebra;
 import net.sharkfw.descriptor.knowledgeBase.SyncDescriptorSchema;
@@ -34,7 +31,7 @@ public class StandardDescriptorSyncKP extends AbstractDescriptorSyncKP
     public StandardDescriptorSyncKP(final SharkEngine sharkEngine, final SyncDescriptorSchema schema, final ContextSpaceDescriptor descriptor, final PeerSTSet recipients)
     {
         super(sharkEngine, schema, descriptor, recipients);
-        recipientsChangedListeners = new VirtualFlow.ArrayLinkedList<>();
+        recipientsChangedListeners = new ArrayList<>();
     }
 
     public StandardDescriptorSyncKP(final SharkEngine sharkEngine, final SyncDescriptorSchema schema, final ContextSpaceDescriptor descriptor)

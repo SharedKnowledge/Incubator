@@ -6,8 +6,6 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
@@ -17,7 +15,6 @@ import net.sharkfw.kep.format.SerializerFactroy;
 import net.sharkfw.knowledgeBase.PeerSTSet;
 import net.sharkfw.knowledgeBase.PeerSemanticTag;
 import net.sharkfw.knowledgeBase.STSet;
-import net.sharkfw.knowledgeBase.STSetListener;
 import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
 import net.sharkfw.knowledgeBase.SharkKBException;
@@ -374,7 +371,7 @@ public abstract class AbstractDescriptorSyncKP extends AbstractSyncKP
 
     private void setDirection(int direction)
     {
-        if (direction != SharkCS.DIRECTION_INOUT || direction != SharkCS.DIRECTION_NOTHING)
+        if (direction != SharkCS.DIRECTION_INOUT && direction != SharkCS.DIRECTION_NOTHING)
         {
             throw new IllegalArgumentException("Not a valid direction. Can only set SharkCS.DIRECTION_INOUT or SharkCS.DIRECTION_NOTHING");
         }

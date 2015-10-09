@@ -5,9 +5,6 @@
  */
 package net.sharkfw.descriptor.knowledgeBase;
 
-import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
-import net.sharkfw.knowledgeBase.SharkKB;
-import net.sharkfw.knowledgeBase.sync.SyncKB;
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 
 /**

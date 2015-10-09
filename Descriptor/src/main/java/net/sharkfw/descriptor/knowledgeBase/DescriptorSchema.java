@@ -66,7 +66,7 @@ public class DescriptorSchema
         for (ContextSpaceDescriptor savedDescriptor : descriptors)
         {
             final String parentId = savedDescriptor.getParent();
-            if (parentId != null && id.equals(parentId))
+            if (id.equals(parentId))
             {
                 children.add(savedDescriptor);
             }

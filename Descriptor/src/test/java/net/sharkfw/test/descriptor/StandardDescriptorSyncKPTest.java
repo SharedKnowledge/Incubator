@@ -492,4 +492,68 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         aliceEngine.stopTCP();
         bobEngine.stopTCP();
     }
+
+    @Test
+    public void subscriptionTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, IOException, SharkSecurityException, InterruptedException
+    {
+        final Dummy alice = new Dummy(ALICE_NAME, ALICE_SI);
+        final SyncKB aliceKB = alice.getKnowledgeBase();
+        final SharkEngine aliceEngine = alice.getEngine();
+        final SyncDescriptorSchema aliceSchema = new SyncDescriptorSchema(aliceKB);
+        final Dummy bob = new Dummy(BOB_NAME, BOB_SI);
+        final SyncKB bobKB = bob.getKnowledgeBase();
+        final SharkEngine bobEngine = bob.getEngine();
+        final SyncDescriptorSchema bobSchema = new SyncDescriptorSchema(bobKB);
+
+        final ContextPoint aliceCCP = DummyDataFactory.createSimpleContextPoint(aliceKB, cTopic);
+        final ContextPoint aliceDeCP = DummyDataFactory.createSimpleContextPoint(aliceKB, deTopic);
+        final ContextPoint bobJavaCP = DummyDataFactory.createSimpleContextPoint(bobKB, javaTopic);
+        final ContextPoint bobTeapotCP = DummyDataFactory.createSimpleContextPoint(bobKB, teapotTopic);
+
+        final STSet multiTopics = new InMemoSTSet();
+        multiTopics.merge(javaTopic);
+        multiTopics.merge(cTopic);
+        multiTopics.merge(deTopic);
+
+        final SharkCS multiContext = new InMemoSharkKB().createInterest(
+                multiTopics,
+                null,
+                null,
+                null,
+                null,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+
+        final ContextSpaceDescriptor multiDescriptor = new ContextSpaceDescriptor(multiContext, DESCRIPTOR_ID);
+        aliceSchema.saveDescriptor(multiDescriptor);
+        bobSchema.saveDescriptor(multiDescriptor);
+
+        final PeerSTSet aliceRecipients = new InMemoPeerSTSet();
+        aliceRecipients.merge(bob.getPeer());
+        final StandardDescriptorSyncKP alicePort = new StandardDescriptorSyncKP(aliceEngine, aliceSchema, multiDescriptor, aliceRecipients);
+
+        final PeerSTSet bobRecipients = new InMemoPeerSTSet();
+        bobRecipients.merge(alice.getPeer());
+        final StandardDescriptorSyncKP bobPort = new StandardDescriptorSyncKP(bobEngine, bobSchema, multiDescriptor, bobRecipients);
+
+        aliceEngine.startTCP(alice.getPort());
+        bobEngine.startTCP(bob.getPort());
+        
+        bobPort.unsubscribe();
+
+        alicePort.pull();
+        Thread.sleep(1000);
+
+        Assert.assertNull(aliceKB.getContextPoint(bobJavaCP.getContextCoordinates()));
+
+        bobPort.subscribe();
+        alicePort.pull();
+        Thread.sleep(1000);
+
+        Assert.assertNotNull(aliceKB.getContextPoint(bobJavaCP.getContextCoordinates()));
+
+        aliceEngine.stopTCP();
+        bobEngine.stopTCP();
+    }
 }

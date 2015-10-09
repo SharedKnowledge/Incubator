@@ -120,7 +120,7 @@ public class DescriptorAssimilationKP extends KnowledgePort
         }
     }
 
-    private SemanticTag getMetadataTag(final SharkCS context) throws SharkKBException
+    protected SemanticTag getMetadataTag(final SharkCS context) throws SharkKBException
     {
         SemanticTag metadataTag = null;
         final STSet topics = context.getTopics();
