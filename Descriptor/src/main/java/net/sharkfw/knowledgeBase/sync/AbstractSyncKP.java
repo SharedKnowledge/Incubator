@@ -3,6 +3,7 @@ package net.sharkfw.knowledgeBase.sync;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
@@ -55,8 +56,13 @@ public abstract class AbstractSyncKP extends KnowledgePort
         try
         {
             this.interest = InMemoSharkKB.createInMemoCopy(context);
-            final PeerSTSet remotePeers = context.getRemotePeers();
+            final PeerSTSet remotePeers = context.getRemotePeers();         
             this.timestampList = new TimestampList(remotePeers, syncKB);
+            this.timestampList.removePeer(null); // Bug Workaround: Remove Junk
+            for(TimestampList.PeerTimestamp s : timestampList._timestamps){
+                System.out.println("********** Stamp " + s.getPeer().getName());
+            }
+            
             this.topicsFP = topicFP;
             this.peersFP = peerFP;
         } catch (SharkKBException ex)
@@ -162,6 +168,7 @@ public abstract class AbstractSyncKP extends KnowledgePort
                         final String contextPointString = L.cp2String(remoteContextPoint);
                         LoggingUtils.debugBox("Insert/Replace ContextPoint in KB of " + ownerName + ".", contextPointString, this);
                         VersionUtils.replaceContextPoint(remoteContextPoint, kb);
+                        notifyKnowledgeAssimilated(this, remoteContextPoint);
                     }
                 }
             } else
@@ -212,8 +219,9 @@ public abstract class AbstractSyncKP extends KnowledgePort
                 final String debugMessage = builder.toString();
                 L.d(debugMessage, this);
             }
-        } catch (SharkException | IOException | IllegalArgumentException ex)
+        } catch (Exception ex)
         {
+            System.out.println("error");
             Logger.getLogger(AbstractSyncKP.class.getName()).log(Level.SEVERE, null, ex);
             throw new IllegalStateException("Exception occurred in doExpose.", ex);
         }
@@ -223,7 +231,18 @@ public abstract class AbstractSyncKP extends KnowledgePort
     {
         final PeerSemanticTag sender = kepConnection.getSender();
         final String[] senderAddresses = sender.getAddresses();
+        
+        System.out.println("*********** " + sender.getName());
+        for (TimestampList.PeerTimestamp stamp : timestampList._timestamps)
+        {
+            if(stamp.getPeer() != null)
+            System.out.println("*********** " + stamp.getPeer().getName() + ", " + stamp.getDate().getTime());
+            else
+                 System.out.println("*********** NULL");
+        }
+        
         final Date lastPeerMeeting = timestampList.getTimestamp(sender);
+
         final List<SyncContextPoint> syncContextPoints = getOffer(lastPeerMeeting);
         //build Knowledge
         final Knowledge knowledge = new InMemoSharkKB().asKnowledge();

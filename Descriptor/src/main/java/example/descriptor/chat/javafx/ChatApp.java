@@ -14,6 +14,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import net.sharkfw.system.L;
 
 /**
  *
@@ -21,14 +22,19 @@ import javafx.stage.Stage;
  */
 public class ChatApp extends Application
 {
-    private static final String TITLE = "SubSpace Test Chat";
+
+    private static final String TITLE = "Chat";
 
     private static Stage stage;
+
+    public static Stage getStage()
+    {
+        return stage;
+    }
 
     public static void switchScene(final Parent root)
     {
         final Scene scene = new Scene(root);
-        scene.getStylesheets().add("/styles/Styles.css");
         stage.setScene(scene);
         stage.show();
     }
@@ -41,6 +47,7 @@ public class ChatApp extends Application
     @Override
     public void start(final Stage stage) throws IOException
     {
+        L.setLogLevel(L.LOGLEVEL_ALL);
         ChatApp.stage = stage;
         stage.setTitle(TITLE);
         final URL peerChooserUrl = getClass().getResource(PeerChooserController.PEER_CHOOSER_FXML);

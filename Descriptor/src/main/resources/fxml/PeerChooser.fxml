@@ -8,6 +8,7 @@
 <?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
 <BorderPane prefHeight="-1.0" prefWidth="-1.0" styleClass="mainFxmlClass" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/2.2" fx:controller="example.descriptor.chat.javafx.PeerChooserController">
   <bottom>
@@ -25,7 +26,20 @@
     </HBox>
   </bottom>
   <center>
-    <ChoiceBox fx:id="choiceBox" minWidth="200.0" BorderPane.margin="$x1" />
+    <VBox prefHeight="-1.0" prefWidth="-1.0" spacing="10.0" BorderPane.alignment="CENTER">
+      <children>
+        <ChoiceBox fx:id="choiceBox" maxWidth="1.7976931348623157E308" minWidth="200.0" />
+        <HBox prefHeight="-1.0" prefWidth="-1.0" spacing="10.0">
+          <children>
+            <TextField fx:id="pathField" disable="true" maxWidth="1.7976931348623157E308" prefWidth="-1.0" style="-fx-opacity: 1.0;" HBox.hgrow="ALWAYS" />
+            <Button fx:id="browseButton" mnemonicParsing="false" text="Browse" />
+          </children>
+        </HBox>
+      </children>
+      <BorderPane.margin>
+        <Insets bottom="10.0" left="5.0" right="5.0" top="10.0" />
+      </BorderPane.margin>
+    </VBox>
   </center>
   <padding>
     <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
@@ -34,6 +48,10 @@
     <URL value="@styles/Styles.css" />
   </stylesheets>
   <top>
-    <Label styleClass="headline" text="Choose a Person:" BorderPane.alignment="BOTTOM_LEFT" />
+    <Label styleClass="headline" text="Choose a Person and KB:" BorderPane.alignment="BOTTOM_LEFT">
+      <font>
+        <Font name="System Bold" size="14.0" />
+      </font>
+    </Label>
   </top>
 </BorderPane>

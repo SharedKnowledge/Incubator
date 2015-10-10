@@ -1,164 +1,186 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package example.descriptor.chat.base;
 
+import example.descriptor.chat.javafx.ChatViewController;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
-import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
-import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
+import net.sharkfw.descriptor.knowledgeBase.DescriptorAlgebra;
+import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
+import net.sharkfw.descriptor.knowledgeBase.SyncDescriptorSchema;
+import net.sharkfw.descriptor.peer.StandardDescriptorSyncKP;
+import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.ContextPoint;
 import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.PeerSTSet;
-import net.sharkfw.knowledgeBase.PeerSemanticTag;
 import net.sharkfw.knowledgeBase.STSet;
+import net.sharkfw.knowledgeBase.SemanticTag;
 import net.sharkfw.knowledgeBase.SharkCS;
-import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
-import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
+import net.sharkfw.knowledgeBase.TimeSemanticTag;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSTSet;
 import net.sharkfw.knowledgeBase.inmemory.InMemoSharkKB;
+import net.sharkfw.knowledgeBase.inmemory.InMemoTimeSemanticTag;
+import net.sharkfw.knowledgeBase.sync.SyncKB;
+import net.sharkfw.kp.KPListener;
+import net.sharkfw.peer.KnowledgePort;
+import net.sharkfw.peer.SharkEngine;
+import net.sharkfw.system.SharkSecurityException;
 
 /**
  *
  * @author Nitros
  */
-public class Chat
+public class Chat implements KPListener
 {
 
-    private static final String CHAT_PREFIX = "example.subspace.chat.base.Chat#CHAT_PREFIX";
-    private static final String DEMLIMITER = "$";
+    private static final String CHAT_ID = "example.subspace.chat.base.Chat#CHAT_ID";
 
-    private final ContextSpaceDescriptor chatDescriptor;
-    private final DescriptorSchema schema;
+    private final StandardDescriptorSyncKP descriptorPort;
+    private final SemanticTag topic;
 
-    protected Chat(final DescriptorSchema schema, final ContextSpaceDescriptor parent, final PeerSemanticTag... peers) throws SharkKBException, DescriptorSchemaException
+    private final Collection<ChatListener> listeners;
+
+    public Chat(final SharkKB sharkKB, final SharkEngine engine, final PeerSTSet recipients) throws SharkKBException, DescriptorSchemaException
     {
-        Objects.requireNonNull(schema, "DescriptorSchema must not be null.");
-        this.schema = schema;
-        if (peers.length < 1)
-        {
-            throw new IllegalArgumentException("Must pass at least one peer.");
-        }
-        final PeerSemanticTag owner = this.schema.getSharkKB().getOwner();
-        if (owner == null)
-        {
-            throw new IllegalArgumentException("SharkKB in DescriptorSchema must have an Owner.");
-        }
-        System.out.println(owner.getName());
-        final ArrayList<PeerSemanticTag> peerList = new ArrayList<>(Arrays.asList(peers));
-        peerList.add(owner);
-        final String chatId = buildChatId(peerList);
-        System.out.println("Chat ID: " + chatId);
-        ContextSpaceDescriptor descriptor = schema.getDescriptor(chatId);
-        System.out.println("Hello World 001");
-        if (descriptor == null)
-        {
-            System.out.println("Hello World 002");
-            final SharkCS context = buildChatContext(chatId, peerList);
-            descriptor = new ContextSpaceDescriptor(context, chatId);
-        }
-        schema.setParent(descriptor, parent);
-        schema.saveDescriptor(descriptor);
-        Objects.requireNonNull(descriptor, "Error in initialisation. Descriptor should not be null here.");
-        this.chatDescriptor = descriptor;
-    }
-
-    public ChatEntry createChatEntry(final String text) throws SharkKBException
-    {
-        final SharkKB sharkKB = schema.getSharkKB();
-        return ChatEntry.createChatEntry(chatDescriptor, sharkKB, text);
-    }
-
-    public List<ChatEntry> getChatEntries() throws SharkKBException
-    {
-        final List<ChatEntry> entries = new ArrayList<>();
-        final SharkKB sharkKB = schema.getSharkKB();
-        System.out.println(sharkKB.getOwner().getName());
-        System.out.println(chatDescriptor.getId());
-        Objects.requireNonNull(sharkKB, "KB null.");
-        Objects.requireNonNull(chatDescriptor, "chatDescriptor null.");
-        final SharkCS chatContext = chatDescriptor.getContext();
-        final Knowledge knowledge = SharkCSAlgebra.extract(sharkKB, chatContext);
-        final Enumeration<ContextPoint> contextPoints = knowledge.contextPoints();
-        while (contextPoints.hasMoreElements())
-        {
-            final ContextPoint contextPoint = contextPoints.nextElement();
-            final ChatEntry entry = new ChatEntry(contextPoint);
-            entries.add(entry);
-        }
-        return entries;
-    }
-
-    private String buildChatId(final List<PeerSemanticTag> peers)
-    {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(CHAT_PREFIX);
-        for (final PeerSemanticTag peer : peers)
-        {
-            final String[] addresses = peer.getAddresses();
-            final String addressesAsString = Arrays.toString(addresses);
-            builder.append(DEMLIMITER);
-            builder.append(addressesAsString);
-
-        }
-        return builder.toString();
-    }
-
-    private SharkCS buildChatContext(final String chatId, final List<PeerSemanticTag> peers) throws SharkKBException
-    {
-        final PeerSemanticTag owner = schema.getSharkKB().getOwner();
-        // topics
-        final STSet topicsDimension = new InMemoSTSet();
-        final String chatname = buildChatname(peers);
-        topicsDimension.createSemanticTag(chatname, chatId);
-        // peers
-        final PeerSTSet peersDimension = new InMemoPeerSTSet();
-        for (PeerSemanticTag peer : peers)
-        {
-            peersDimension.merge(peer);
-        }
-        // remote peers
-        final PeerSTSet remotePeersDimension = new InMemoPeerSTSet();
-        for (PeerSemanticTag peer : peers)
-        {
-            if (!peer.identical(owner))
-            {
-                remotePeersDimension.merge(peer);
-            }
-        }
+        final STSet topics = new InMemoSTSet();
+        topic = topics.createSemanticTag(CHAT_ID, CHAT_ID);
         final SharkCS context = new InMemoSharkKB().createInterest(
-                topicsDimension,
-                owner,
-                peersDimension,
-                remotePeersDimension,
+                topics,
+                null,
+                null,
+                null,
                 null,
                 null,
                 SharkCS.DIRECTION_INOUT
         );
-        return context;
+        final ContextSpaceDescriptor descriptor = new ContextSpaceDescriptor(context, CHAT_ID);
+        final SyncKB syncKB = new SyncKB(sharkKB);
+        final SyncDescriptorSchema schema = new SyncDescriptorSchema(syncKB);
+        schema.overrideDescriptor(descriptor);
+        descriptorPort = new StandardDescriptorSyncKP(engine, schema, descriptor, recipients);
+        descriptorPort.addListener(this);
+        listeners = new ArrayList<>();
+        read();
     }
 
-    private String buildChatname(List<PeerSemanticTag> peers)
+    public void addEntry(final String text) throws SharkKBException
     {
-        final StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < peers.size(); i++)
-        {
-            if (i != 0)
-            {
-                builder.append(", ");
-            }
-            final String name = peers.get(i).getName();
-            builder.append(name);
-        }
-        return builder.toString();
+        final SyncKB sharkKB = descriptorPort.getSchema().getSyncKB();
+        final long time = System.currentTimeMillis();
+        final TimeSemanticTag timeTag = new InMemoTimeSemanticTag(time, 0);
+        final ContextCoordinates contextCoordinates = sharkKB.createContextCoordinates(
+                topic,
+                sharkKB.getOwner(),
+                null,
+                null,
+                timeTag,
+                null,
+                SharkCS.DIRECTION_INOUT
+        );
+        final ContextPoint contextPoint = sharkKB.createContextPoint(contextCoordinates);
+        System.out.println("Add I: " + Collections.list(sharkKB.getAllContextPoints()).size());;
+        contextPoint.addInformation(text);
+        notifyChatListener();
+        System.out.println("C Size: " + Collections.list(sharkKB.getAllContextPoints()).size());;
+        send();
     }
 
+    public List<ContextPoint> getEntries() throws SharkKBException
+    {
+        final Knowledge knowledge = DescriptorAlgebra.extract(
+                descriptorPort.getSchema(),
+                descriptorPort.getDescriptor()
+        );
+
+        System.out.println("K Size: " + knowledge.getNumberOfContextPoints());;
+
+        final List<ContextPoint> list = Collections.list(knowledge.contextPoints());
+        Collections.sort(list, new Comparator<ContextPoint>()
+        {
+
+            @Override
+            public int compare(ContextPoint firstPoint, ContextPoint secondPoint)
+            {
+                long firstTime = firstPoint.getContextCoordinates().getTime().getFrom();
+                long secondTime = secondPoint.getContextCoordinates().getTime().getFrom();
+                return (int) (firstTime - secondTime);
+            }
+        });
+        return list;
+    }
+
+    private void send()
+    {
+        try
+        {
+            descriptorPort.pullRequest();
+        } catch (SharkKBException | SharkSecurityException | IOException ex)
+        {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "Message send failed. Check Log.", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ChatViewController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void read()
+    {
+        try
+        {
+            descriptorPort.pull();
+        } catch (SharkSecurityException | IOException ex)
+        {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "Reading failed. Check Log.", JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ChatViewController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public StandardDescriptorSyncKP getDescriptorPort()
+    {
+        return descriptorPort;
+    }
+
+    public void addListener(final ChatListener listener)
+    {
+        listeners.add(listener);
+    }
+
+    public void removeListener(final ChatListener listener)
+    {
+        listeners.remove(listener);
+    }
+
+    private void notifyChatListener()
+    {
+        for (ChatListener listener : listeners)
+        {
+            System.out.println("Hello World 1");
+            listener.chatChanged();
+        }
+    }
+
+    @Override
+    public void exposeSent(KnowledgePort kp, SharkCS scs)
+    {
+        // Do nothing
+    }
+
+    @Override
+    public void insertSent(KnowledgePort kp, Knowledge knwldg)
+    {
+        // Do nothing
+    }
+
+    @Override
+    public void knowledgeAssimilated(KnowledgePort knowledgePort, ContextPoint contextPoint)
+    {
+        System.out.println("Hello World 0");
+        notifyChatListener();
+    }
 }
