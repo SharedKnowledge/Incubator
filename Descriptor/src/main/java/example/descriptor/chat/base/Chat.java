@@ -17,6 +17,7 @@ import net.sharkfw.descriptor.knowledgeBase.SyncDescriptorSchema;
 import net.sharkfw.descriptor.peer.StandardDescriptorSyncKP;
 import net.sharkfw.knowledgeBase.ContextCoordinates;
 import net.sharkfw.knowledgeBase.ContextPoint;
+import net.sharkfw.knowledgeBase.Information;
 import net.sharkfw.knowledgeBase.Knowledge;
 import net.sharkfw.knowledgeBase.PeerSTSet;
 import net.sharkfw.knowledgeBase.STSet;
@@ -35,19 +36,48 @@ import net.sharkfw.peer.SharkEngine;
 import net.sharkfw.system.SharkSecurityException;
 
 /**
+ * This class is a chat. It uses a {@link StandardDescriptorSyncKP} to publish
+ * its entries.
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public class Chat implements KPListener
 {
 
+    /**
+     * ID of the descriptor to create.
+     */
     private static final String CHAT_ID = "example.subspace.chat.base.Chat#CHAT_ID";
-
+    /**
+     * {@link KnowledgePort} used by this Chat.
+     */
     private final StandardDescriptorSyncKP descriptorPort;
+    /**
+     * General chat topic. Used to create {@link ContextPoint}.
+     */
     private final SemanticTag topic;
-
+    /**
+     * Collection of listeners to notify if the chat changes.
+     */
     private final Collection<ChatListener> listeners;
 
+    /**
+     * Constructor for this class. It creates the
+     * {@link StandardDescriptorSyncKP}, the topic and sets a {@link KPListener}
+     * on the Port. When finished, pulls data from all recipients.<br/><br/>
+     *
+     * Note:
+     * {@link SyncDescriptorSchema#overrideDescriptor(ContextSpaceDescriptor)}
+     * is called to save the created {@link ContextSpaceDescriptor}-
+     *
+     * @param sharkKB Knowledge Base to create the {@link ContextPoint} in.
+     * @param engine Engine to send the data.
+     * @param recipients Recipients to chat with.
+     * @throws SharkKBException If creating the context for the
+     * {@link ContextSpaceDescriptor} fails.
+     * @throws DescriptorSchemaException If the {@link ContextSpaceDescriptor}
+     * could not be saved in {@link SyncDescriptorSchema}.
+     */
     public Chat(final SharkKB sharkKB, final SharkEngine engine, final PeerSTSet recipients) throws SharkKBException, DescriptorSchemaException
     {
         final STSet topics = new InMemoSTSet();
@@ -71,6 +101,16 @@ public class Chat implements KPListener
         read();
     }
 
+    /**
+     * Adds an entry to the chat and sends it.<br/>
+     * It first creates a {@link ContextPoint}, adds the parameter text as
+     * {@link Information} and calls {@link #send()}. The ContextPoint contains
+     * the Knowledge Base owner as originator and the current time as 'from' in
+     * the time dimension.
+     *
+     * @param text Text of the new entry.
+     * @throws SharkKBException If creating the {@link ContextPoint} fails.
+     */
     public void addEntry(final String text) throws SharkKBException
     {
         final SyncKB sharkKB = descriptorPort.getSchema().getSyncKB();
@@ -86,22 +126,34 @@ public class Chat implements KPListener
                 SharkCS.DIRECTION_INOUT
         );
         final ContextPoint contextPoint = sharkKB.createContextPoint(contextCoordinates);
-        System.out.println("Add I: " + Collections.list(sharkKB.getAllContextPoints()).size());;
         contextPoint.addInformation(text);
         notifyChatListener();
-        System.out.println("C Size: " + Collections.list(sharkKB.getAllContextPoints()).size());;
         send();
     }
 
+    /**
+     * Gets all entries of this chat. In detail, it extracts all
+     * {@link ContextPoint} from {@link #descriptorPort} underlying Knowledge
+     * Base using the ports {@link ContextSpaceDescriptor}. The point have the
+     * following format:<br/>
+     * <table border="1">
+     * <tr><td>Topic</td><td>technical description</td></tr>
+     * <tr><td>Originator</td><td>author of the entry</td></tr>
+     * <tr>
+     * <td>Time</td>
+     * <td>time the entry was written ({@link TimeSemanticTag#getFrom()})</td>
+     * </tr>
+     * </table>
+     *
+     * @return A List of all ContextPoint representing the entries of this chat.
+     * @throws SharkKBException Any error while extracting the points.
+     */
     public List<ContextPoint> getEntries() throws SharkKBException
     {
         final Knowledge knowledge = DescriptorAlgebra.extract(
                 descriptorPort.getSchema(),
                 descriptorPort.getDescriptor()
         );
-
-        System.out.println("K Size: " + knowledge.getNumberOfContextPoints());;
-
         final List<ContextPoint> list = Collections.list(knowledge.contextPoints());
         Collections.sort(list, new Comparator<ContextPoint>()
         {
@@ -117,6 +169,9 @@ public class Chat implements KPListener
         return list;
     }
 
+    /**
+     * Sends data. Simply calls {@link StandardDescriptorSyncKP#pullRequest()}.
+     */
     private void send()
     {
         try
@@ -129,6 +184,9 @@ public class Chat implements KPListener
         }
     }
 
+    /**
+     * Reads data. Simply calls {@link StandardDescriptorSyncKP#pull()}.
+     */
     private void read()
     {
         try
@@ -141,46 +199,65 @@ public class Chat implements KPListener
         }
     }
 
-    public StandardDescriptorSyncKP getDescriptorPort()
-    {
-        return descriptorPort;
-    }
-
+    /**
+     * Add a listener to get notified when the chat changes.
+     *
+     * @param listener The listener to add.
+     */
     public void addListener(final ChatListener listener)
     {
         listeners.add(listener);
     }
 
+    /**
+     * Removes a listener to no longer get notified when the chat changes.
+     *
+     * @param listener The listener to removes.
+     */
     public void removeListener(final ChatListener listener)
     {
         listeners.remove(listener);
     }
 
+    /**
+     * Notify all listener when the chat changes.
+     */
     private void notifyChatListener()
     {
         for (ChatListener listener : listeners)
         {
-            System.out.println("Hello World 1");
             listener.chatChanged();
         }
     }
 
+    /**
+     * Class is not interested in this event.
+     */
     @Override
     public void exposeSent(KnowledgePort kp, SharkCS scs)
     {
         // Do nothing
     }
 
+    /**
+     * Class is not interested in this event.
+     */
     @Override
     public void insertSent(KnowledgePort kp, Knowledge knwldg)
     {
         // Do nothing
     }
 
+    /**
+     * Notify all listener when {@link StandardDescriptorSyncKP} assimilates 
+     * a ContextPoint.
+     * 
+     * @param knowledgePort Always {@link #descriptorPort} in this case.
+     * @param contextPoint The assimilated ContextPoint.
+     */
     @Override
     public void knowledgeAssimilated(KnowledgePort knowledgePort, ContextPoint contextPoint)
     {
-        System.out.println("Hello World 0");
         notifyChatListener();
     }
 }

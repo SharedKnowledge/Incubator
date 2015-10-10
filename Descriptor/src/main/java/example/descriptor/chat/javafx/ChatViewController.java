@@ -22,38 +22,73 @@ import javafx.stage.WindowEvent;
 import javax.swing.JOptionPane;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
 import net.sharkfw.knowledgeBase.ContextPoint;
+import net.sharkfw.knowledgeBase.Information;
 import net.sharkfw.knowledgeBase.PeerSTSet;
 import net.sharkfw.knowledgeBase.PeerSemanticTag;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.filesystem.FSSharkKB;
 import net.sharkfw.peer.J2SEAndroidSharkEngine;
 
+/**
+ * The controller for the chat view. Handles input of chat entries,
+ * shows the chat entries and the recipients.
+ * 
+ * @author Nitros Razril (pseudonym)
+ */
 public class ChatViewController implements ChatListener
 {
-
+    /**
+     * FXML File this class is the controller of.
+     */
     public static final String CHAT_VIEW_FXML = "/fxml/ChatView.fxml";
-
+    /**
+     * List of chat entries.
+     */
     @FXML
     private ListView<String> entryList;
-
+    /**
+     * List of recipients. This a the persons who will receive the send chat entry.
+     */
     @FXML
     private ListView<String> recipientList;
-
+    /**
+     * Input field for a message.
+     */
     @FXML
     private TextField input;
-
+    /**
+     * Button to send a message.
+     */
     @FXML
     private Button sendButton;
-
+    /**
+     * The actual chat.
+     */
     private Chat chat;
 
+    /**
+     * Whenever the chat changes reload all entries.
+     */
     @Override
     public void chatChanged()
     {
-        System.out.println("Hello World 2");
         reloadEntries();
     }
 
+    /**
+     * Initializes the chat. Creates a {@link FSSharkKB} based on the given
+     * parameters. Adds all recipients to it, creates and starts the engine,
+     * adds a close Request to the stage of this application, so the engine is
+     * stopped on close and crates the actual chat object. After that, all entries
+     * are loaded.<br/><br/>
+     * 
+     * NOTE: The name of peer is added to the End of path before creating 
+     * the Knowledge Base.
+     * 
+     * @param path Path to create the Knowledge Base in.
+     * @param peer Person that chats. Will also be owner of Knowledge Base.
+     * @param recipients Persons to chat with.
+     */
     public void initChat(final String path, final PeerSemanticTag peer, final PeerSTSet recipients)
     {
         try
@@ -111,6 +146,11 @@ public class ChatViewController implements ChatListener
         }
     }
 
+    /**
+     * Adds the recipients to {@link #recipientList}.
+     * 
+     * @param recipients recipients to {@link #recipientList}
+     */
     private void setRecipients(final PeerSTSet recipients)
     {
         final ObservableList<String> items = FXCollections.observableArrayList();
@@ -123,6 +163,12 @@ public class ChatViewController implements ChatListener
         recipientList.setItems(items);
     }
 
+    /**
+     * Loads all entries and adds them to{@link #entryList}. Only {@link ContextPoint}
+     * which have {@link Information} and only the first one will be added.
+     * The formate is:<br/>
+     * Sender (Date): Text 
+     */
     private void reloadEntries()
     {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("d MMM HH:mm", Locale.getDefault());
@@ -130,15 +176,10 @@ public class ChatViewController implements ChatListener
         try
         {
             final List<ContextPoint> entries = chat.getEntries();
-            System.out.println("E Size: " + entries.size());
-            System.err.println("Hello World 3");
             for (final ContextPoint entry : entries)
             {
-                System.err.println("Hello World 4");
-                System.out.println("I Size: " + entry.getNumberInformation());
                 if (entry.getInformation().hasNext())
                 {
-                    System.err.println("Hello World 4.x");
                     final String text = entry.getInformation().next().getContentAsString();
                     final String sender = entry.getContextCoordinates().getOriginator().getName();
                     final long time = entry.getContextCoordinates().getTime().getFrom();
@@ -160,6 +201,10 @@ public class ChatViewController implements ChatListener
         }
     }
 
+    /**
+     * Add an entry to the chat, but only if {@link #input} is not empty.
+     * Clear {@link #input} afterwards.
+     */
     private void addEntry()
     {
         try

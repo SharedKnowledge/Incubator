@@ -171,8 +171,9 @@
                     </execution>
                 </executions>
             </plugin>
-            
+   
         </plugins>
+        <finalName>Chat</finalName>
     </build>
 
 </project>

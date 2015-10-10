@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package example.descriptor.chat.javafx;
 
 import static example.descriptor.chat.javafx.ChatApp.switchScene;
@@ -25,7 +20,6 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import net.sharkfw.knowledgeBase.PeerSTSet;
@@ -34,39 +28,57 @@ import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoPeerSTSet;
 
 /**
- * FXML Controller class
+ * Controller class to choose a peer as the person to chat and its Knowledge
+ * Base.
  *
- * @author Nitros
+ * @author @author Nitros Razril (pseudonym)
  */
 public class PeerChooserController implements Initializable
 {
 
+    /**
+     * FXML File this class is the controller of.
+     */
     public static final String PEER_CHOOSER_FXML = "/fxml/PeerChooser.fxml";
-
+    /**
+     * Property file containing informations about the available peers.
+     */
     private static final String PROPERTIES_FILE = "/properties/peers.properties";
-
+    /**
+     * The OK Button.
+     */
     @FXML
     private Button okButton;
-
+    /**
+     * The cancel Button.
+     */
     @FXML
     private Button cancelButton;
-
+    /**
+     * The browse Button.
+     */
     @FXML
     private Button browseButton;
-
+    /**
+     * Text field containing path to Knowledge base.
+     */
     @FXML
     private TextField pathField;
-
+    /**
+     * ChoiceBox to choose a person from.
+     */
     @FXML
     private ChoiceBox<String> choiceBox;
 
     private Properties properties;
 
     /**
-     * Initializes the controller class.
+     * Initializes the controller class. Loads the properties,
+     * fills the ChoiceBox with the keys of the properties and
+     * sets all Actions to the GUI elements.
      *
-     * @param url
-     * @param resourceBundle
+     * @param url see {@link Initializable#initialize(URL, ResourceBundle)}
+     * @param resourceBundle {@link Initializable#initialize(URL, ResourceBundle)}
      */
     @Override
     public void initialize(final URL url, final ResourceBundle resourceBundle)
@@ -131,6 +143,9 @@ public class PeerChooserController implements Initializable
         okButtonState();
     }
 
+    /**
+     * Loads properties form file system.
+     */
     private void loadProperties()
     {
         properties = new Properties();
@@ -144,6 +159,9 @@ public class PeerChooserController implements Initializable
         }
     }
 
+    /**
+     * Starts up the chat by providing all necessary informations.
+     */
     private void loadChat()
     {
         try
@@ -179,6 +197,10 @@ public class PeerChooserController implements Initializable
         }
     }
 
+    /**
+     * Uses a  {@link DirectoryChooser} to choose the location of the 
+     * Knowledge Base.
+     */
     private void selectKB()
     {
         final DirectoryChooser directoryChooser = new DirectoryChooser();
@@ -190,6 +212,11 @@ public class PeerChooserController implements Initializable
         }
     }
 
+    /**
+     * Enables the OK button if person was chosen in the choice box and
+     * a Knowledge Base is selected ({@link #pathField} is not empty). Disables
+     * the button otherwise.
+     */
     private void okButtonState()
     {
         final String peer = choiceBox.getSelectionModel().getSelectedItem();

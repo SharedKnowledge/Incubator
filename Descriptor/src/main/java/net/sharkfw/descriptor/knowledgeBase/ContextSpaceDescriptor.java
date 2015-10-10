@@ -14,13 +14,13 @@ import net.sharkfw.system.L;
 import net.sharkfw.xml.jaxb.SharkCSAdapter;
 
 /**
- * This class des describes a set of Daten. As that is holds a {@link SharkCS}.
- * A ContextSpaceDescriptor can be set into an parent child realtionship with
+ * This class  describes a set of data. As that is holds a {@link SharkCS}.
+ * A ContextSpaceDescriptor can be set into an parent child relationship with
  * the help of the {@link DescriptorSchema} class. Data can be extracted with
  * the help of the {@link DescriptorAlgebra} class. <br/><br/>
  *
- * A ContextSpaceDescriptor can be empty when the context paramter is null. In
- * this case it only describes a realtionship. <br/><br/>
+ * A ContextSpaceDescriptor can be empty when the context parameter is null. In
+ * this case it only describes a relationship. <br/><br/>
  *
  * This class can be used serialized via JAXB an passed to
  * {@link JAXBContext#newInstance(java.lang.Class...)}.
@@ -73,7 +73,7 @@ public class ContextSpaceDescriptor
 
     /**
      * Constructor for an empty ContextSpaceDescriptor. It will describe no 
-     * actual data. It will have no parentinitially. Save it in a
+     * actual data. It will have no parent initially. Save it in a
      * {@link DescriptorSchema} and use {@link DescriptorSchema#setParent(
      * net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor,
      * net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor)} for that.
@@ -86,13 +86,13 @@ public class ContextSpaceDescriptor
     }
 
     /**
-     * Constructor only usable for classes of this package. Alle 3 
-     * paramters can be set. Choose parent with care!
+     * Constructor only usable for classes of this package. All 3 
+     * parameters can be set. Choose parent with care!
      * 
      * @param context The context for this descriptor. Data will be extracted
      * based on this.
      * @param id The ID of this descriptor.
-     * @param parent The ID of praent of this descriptor.
+     * @param parent The ID of parent of this descriptor.
      */
     protected ContextSpaceDescriptor(final SharkCS context, final String id, final String parent)
     {
@@ -131,8 +131,8 @@ public class ContextSpaceDescriptor
     }
 
     /**
-     * Retruns if the descriptor is empty an will not extract actual data. <br/>
-     * In more details retruns <code>context == null</code>.
+     * Returns if the descriptor is empty an will not extract actual data. <br/>
+     * In more details returns <code>context == null</code>.
      * 
      * @return True if this descriptor is empty, false otherwise.
      */
@@ -142,8 +142,8 @@ public class ContextSpaceDescriptor
     }
 
      /**
-     * Retruns if the descriptor is has a parent.<br/>
-     * In more details retruns <code>parent != null</code>.
+     * Returns if the descriptor is has a parent.<br/>
+     * In more details returns <code>parent != null</code>.
      * 
      * @return True if this descriptor has a parent, false otherwise.
      */
@@ -153,7 +153,7 @@ public class ContextSpaceDescriptor
     }
 
     /**
-     * Sets {@link #parent}. Only useable for classes of this package.
+     * Sets {@link #parent}. Only usable for classes of this package.
      * Use with care!
      * 
      * @param parentId The new value for {@link #parent}.
@@ -164,11 +164,11 @@ public class ContextSpaceDescriptor
     }
 
     /**
-     * Sets {@link #parent} with ID of teh given descriptor.
-     * Only useable for classes of this package.
+     * Sets {@link #parent} with ID of the given descriptor.
+     * Only usable for classes of this package.
      * Use with care!
      * 
-     * @param descriptor The ID of the geiven descriptor will
+     * @param descriptor The ID of the given descriptor will
      * be sett as new value for {@link #parent}.
      */
     protected void setParent(final ContextSpaceDescriptor descriptor)
@@ -177,7 +177,7 @@ public class ContextSpaceDescriptor
     }
 
     /**
-     * Sets {@link #parent} to null. Clears teh parent reationship this way.
+     * Sets {@link #parent} to null. Clears the parent relationship this way.
      */
     protected void clearParent()
     {
@@ -250,9 +250,9 @@ public class ContextSpaceDescriptor
 
     /**
      * Turns the 3 parameter of this class into a String. The String will
-     * have newlines in it. Usefull für debugging.
+     * have newlines in it. Useful for debugging.
      * 
-     * @return Zhe 3 parameter of this class as String
+     * @return The 3 parameter of this class as String
      */
     @Override
     public String toString()
@@ -268,7 +268,7 @@ public class ContextSpaceDescriptor
     /**
      * Sets the 3 parameter of this class.
      * 
-     * @param context Kontext to set.
+     * @param context Context to set.
      * @param id ID to set.
      * @param parent Parent to set.
      */

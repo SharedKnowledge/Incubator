@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package example.descriptor.chat.javafx;
 
 import java.io.IOException;
@@ -14,24 +9,39 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import net.sharkfw.system.L;
 
 /**
+ * Main Class of the Chat Application. Starts up the JavaFX GUI-Thread.
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public class ChatApp extends Application
 {
 
+    /**
+     * Title for the frame.
+     */
     private static final String TITLE = "Chat";
-
+    /**
+     * JavaFX stage to show the GUI in.
+     */
     private static Stage stage;
 
+    /**
+     * Returns {@link #stage}
+     *
+     * @return {@link #stage}
+     */
     public static Stage getStage()
     {
         return stage;
     }
 
+    /**
+     * Switches a scene. This means a new GUI is shown.
+     *
+     * @param root The class acting as the root container for the GUI.
+     */
     public static void switchScene(final Parent root)
     {
         final Scene scene = new Scene(root);
@@ -39,15 +49,24 @@ public class ChatApp extends Application
         stage.show();
     }
 
+    /**
+     * Closes this application.
+     */
     public static void closeApp()
     {
         Platform.exit();
     }
 
+    /**
+     * Called when this applications starts. Sets the title an loads the first
+     * GUI element.
+     *
+     * @param stage The stage for the GUI.
+     * @throws IOException see {@link Application#start(Stage)}
+     */
     @Override
     public void start(final Stage stage) throws IOException
     {
-        L.setLogLevel(L.LOGLEVEL_ALL);
         ChatApp.stage = stage;
         stage.setTitle(TITLE);
         final URL peerChooserUrl = getClass().getResource(PeerChooserController.PEER_CHOOSER_FXML);
@@ -67,5 +86,4 @@ public class ChatApp extends Application
     {
         launch(args);
     }
-
 }

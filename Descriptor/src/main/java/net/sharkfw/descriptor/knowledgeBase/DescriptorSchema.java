@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.sharkfw.descriptor.knowledgeBase;
 
 import java.util.ArrayList;
@@ -19,22 +14,47 @@ import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.xml.jaxb.JAXBSerializer;
 
 /**
+ * This class persists {@link ContextSpaceDescriptor} as well as holds their
+ * relationships. A DescriptorSchema is a List of trees.
  *
  * @author Nitros Razril (pseudonym)
  */
 public class DescriptorSchema
 {
 
+    /**
+     * Key for property the list {@link ContextSpaceDescriptor} is saved on at
+     * the Knowledge Base.
+     */
     private static final String DESCRIPTOR_LIST = "net.sharkfw.descriptor.knowledgeBase.DescriptorEngine#DESCRIPTOR_LIST";
+    /**
+     * Serializer to turn {@link ContextSpaceDescriptor} into XML.
+     */
     private static final JAXBSerializer SERIALIZER = SerializerFactroy.INSTANCE.getDescriptorSerializer();
-
+    /**
+     * Knowledge Base that holds the list of {@link ContextSpaceDescriptor}.
+     */
     private final SharkKB sharkKB;
 
+    /**
+     * Any schema is based on a Knowledge Base. SO it needs to be passed in the
+     * constructor.
+     *
+     * @param sharkKB This schemas Knowledge Base.
+     */
     public DescriptorSchema(final SharkKB sharkKB)
     {
         this.sharkKB = sharkKB;
     }
 
+    /**
+     * Gets a ContextSpaceDescriptor by id form the schema.
+     *
+     * @param id The id of the ContextSpaceDescriptor to get.
+     * @return The ContextSpaceDescriptor for the id or null, if none exits.
+     * @throws DescriptorSchemaException If en error occurs while reading form
+     * the Knowledge Base.
+     */
     public ContextSpaceDescriptor getDescriptor(final String id) throws DescriptorSchemaException
     {
         ContextSpaceDescriptor foundDescriptor = null;
@@ -51,6 +71,13 @@ public class DescriptorSchema
         return foundDescriptor;
     }
 
+    /**
+     * Reads all ContextSpaceDescriptors form the underlying Knowledge Base.
+     *
+     * @return All ContextSpaceDescriptors form the underlying Knowledge Base.
+     * @throws DescriptorSchemaException If the reading fails to to an
+     * exception.
+     */
     public Set<ContextSpaceDescriptor> getDescriptors() throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> descriptors = new HashSet<>();
@@ -59,6 +86,14 @@ public class DescriptorSchema
         return descriptors;
     }
 
+    /**
+     * Gets all children of a ContextSpaceDescriptors in a collection of
+     * ContextSpaceDescriptors.
+     *
+     * @param descriptor ContextSpaceDescriptors to get the children for.
+     * @param descriptors Collection to search in.
+     * @return Children of given DescriptorSchema.
+     */
     public static Set<ContextSpaceDescriptor> getChildren(final ContextSpaceDescriptor descriptor, final Collection<ContextSpaceDescriptor> descriptors)
     {
         final Set<ContextSpaceDescriptor> children = new HashSet<>();
@@ -74,12 +109,29 @@ public class DescriptorSchema
         return children;
     }
 
+    /**
+     * Gets all children of a ContextSpaceDescriptors in this Schema.
+     *
+     * @param descriptor ContextSpaceDescriptors to get the children for.
+     * @return Children of given DescriptorSchema.
+     * @throws DescriptorSchemaException Any error while reading from the
+     * schema.
+     */
     public Set<ContextSpaceDescriptor> getChildren(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> savedDescriptors = getDescriptors();
         return getChildren(descriptor, savedDescriptors);
     }
 
+    /**
+     * Gets the direct parent of a ContextSpaceDescriptor from a collection of
+     * ContextSpaceDescriptors.
+     *
+     * @param descriptor ContextSpaceDescriptor to get the parent for.
+     * @param descriptors collection to get the parent from.
+     * @return The parent of ContextSpaceDescriptor or null, if it has none in
+     * this collection.
+     */
     public static ContextSpaceDescriptor getParent(final ContextSpaceDescriptor descriptor, final Collection<ContextSpaceDescriptor> descriptors)
     {
         ContextSpaceDescriptor parent = null;
@@ -99,6 +151,14 @@ public class DescriptorSchema
         return parent;
     }
 
+    /**
+     * Gets the direct parent of a ContextSpaceDescriptor from this schema.
+     *
+     * @param descriptor ContextSpaceDescriptor to get the parent for.
+     * @return The parent of ContextSpaceDescriptor or null, if it has none.
+     * @throws DescriptorSchemaException Any error while reading from the
+     * schema.
+     */
     public ContextSpaceDescriptor getParent(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> savedDescriptors = getDescriptors();
@@ -106,11 +166,21 @@ public class DescriptorSchema
     }
 
     /**
-     * Test
+     * Sets a new parent for an ContextSpaceDescriptor. If the schema does not
+     * contain an identical ContextSpaceDescriptor as parent and
+     * descriptor.<br/><br/>
      *
-     * @param descriptor
-     * @param parent
-     * @throws DescriptorSchemaException
+     * NOTE: The to descriptor identical ContextSpaceDescriptor in the schema is
+     * is overridden with the new parameters. It also tests if the tree
+     * structure criteria is still met after adding setting the new parent. If
+     * not, throws a exception.
+     *
+     * @param descriptor The ContextSpaceDescriptor to give a new parent.
+     * @param parent The parent to set for descriptor.
+     * @throws DescriptorSchemaException Any error while writing to the schema
+     * and if the schema does not contain an identical ContextSpaceDescriptor as
+     * parent and descriptor. Also throws this, if the new schema would create a
+     * loop.
      */
     public void setParent(final ContextSpaceDescriptor descriptor, final ContextSpaceDescriptor parent) throws DescriptorSchemaException
     {
@@ -148,6 +218,16 @@ public class DescriptorSchema
         saveDescriptor(descriptor);
     }
 
+    /**
+     * Gets the whole tree for a given ContextSpaceDescriptor. First searches
+     * the root and then calls {@link #getSubtree(ContextSpaceDescriptor)} with
+     * root as parameter.
+     *
+     * @param descriptor The ContextSpaceDescriptor to get the tree for.
+     * @return The tree of an ContextSpaceDescriptor.
+     * @throws DescriptorSchemaException Any error while reading form the
+     * schema.
+     */
     public Set<ContextSpaceDescriptor> getTree(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         ContextSpaceDescriptor root = descriptor;
@@ -158,6 +238,15 @@ public class DescriptorSchema
         return getSubtree(root);
     }
 
+    /**
+     * Gets the subtree of an ContextSpaceDescriptor including itself. This is
+     * done via recursively calling this method.
+     *
+     * @param descriptor The descriptor to get the subtree for.
+     * @return Subtree of a ContextSpaceDescriptor including itself.
+     * @throws DescriptorSchemaException Any error while reading form the
+     * schema.
+     */
     public Set<ContextSpaceDescriptor> getSubtree(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> tree = new HashSet<>();
@@ -171,12 +260,36 @@ public class DescriptorSchema
         return tree;
     }
 
+    /**
+     * Saves the ContextSpaceDescriptor to the Knowledge Base. Will not override
+     * a any ContextSpaceDescriptor with the same ID. So efficiently only saves
+     * new ContextSpaceDescriptor.
+     *
+     * @param descriptor ContextSpaceDescriptor to save.
+     * @return If successfully saved,
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     *
+     * @see #overrideDescriptor(ContextSpaceDescriptor)
+     */
     public boolean saveDescriptor(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         Set<ContextSpaceDescriptor> singelton = Collections.singleton(descriptor);
         return saveDescriptors(singelton);
     }
 
+    /**
+     * Saves a collection ContextSpaceDescriptor to the Knowledge Base. Will not
+     * override a any ContextSpaceDescriptor with the same ID. So efficiently
+     * only saves new ContextSpaceDescriptor.
+     *
+     * @param descriptors The collection to save.
+     * @return If the schema has changed in the process.
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     *
+     * @see #overrideDescriptors(Collection)
+     */
     public boolean saveDescriptors(final Collection<ContextSpaceDescriptor> descriptors) throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> existingDescriptors = getDescriptors();
@@ -188,12 +301,28 @@ public class DescriptorSchema
         return changed;
     }
 
+    /**
+     * Removes a ContextSpaceDescriptor form the Schema.
+     *
+     * @param descriptor The ContextSpaceDescriptor to remove.
+     * @return If the process was successful.
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     */
     public boolean removeDescriptor(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         Set<ContextSpaceDescriptor> singelton = Collections.singleton(descriptor);
         return removeDescriptors(singelton);
     }
 
+    /**
+     * Removes a collection of ContextSpaceDescriptor form the Schema.
+     *
+     * @param descriptors The collection of ContextSpaceDescriptor to remove.
+     * @return If the schema has changed in the process.
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     */
     public boolean removeDescriptors(final Collection<ContextSpaceDescriptor> descriptors) throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> existingDescriptors = getDescriptors();
@@ -205,35 +334,88 @@ public class DescriptorSchema
         return changed;
     }
 
+    /**
+     * Forcefully Overrides a ContextSpaceDescriptor in the Schema. The
+     * ContextSpaceDescriptor in the schema with the same ID will be replaced.
+     * If non exits this simply adds him.
+     *
+     * @param descriptor The ContextSpaceDescriptor to override.
+     * @return If the schema has changed.
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     */
     public boolean overrideDescriptor(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         Set<ContextSpaceDescriptor> singelton = Collections.singleton(descriptor);
         return overrideDescriptors(singelton);
     }
 
+    /**
+     * Forcefully Overrides a collection of ContextSpaceDescriptor in the
+     * Schema. The ContextSpaceDescriptor in the schema with the same ID will be
+     * replaced. If non exits this simply adds him.
+     *
+     * @param descriptors The collection of ContextSpaceDescriptor to override.
+     * @return If the schema has changed.
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     */
     public boolean overrideDescriptors(final Collection<ContextSpaceDescriptor> descriptors) throws DescriptorSchemaException
     {
         removeDescriptors(descriptors);
         return saveDescriptors(descriptors);
     }
 
+    /**
+     * Deletes all ContextSpaceDescriptor in the schema. This means, the
+     * underlying Knowledge Base no longe holds any ContextSpaceDescriptor.
+     *
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     */
     public void clearDescriptors() throws DescriptorSchemaException
     {
         final Collection<ContextSpaceDescriptor> empty = Collections.emptySet();
         writeDescriptors(empty);
     }
 
+    /**
+     * Gets the underlying Knowledge Base.
+     *
+     * @return The underlying Knowledge Base.
+     */
     public SharkKB getSharkKB()
     {
         return sharkKB;
     }
 
+    /**
+     * Test if a ContextSpaceDescriptor with the same ID exists in the schema.
+     *
+     * @param descriptor ContextSpaceDescriptor to test.
+     * @return True of a ContextSpaceDescriptor with the same ID exists, false
+     * otherwise.
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     */
     public boolean contains(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         final Collection<ContextSpaceDescriptor> descriptors = getDescriptors();
         return descriptors.contains(descriptor);
     }
 
+    /**
+     * Test if a ContextSpaceDescriptor with the same ID, parent an context
+     * exists in the given collection of ContextSpaceDescriptor.
+     *
+     * @param descriptor ContextSpaceDescriptor to test.
+     * @param descriptors ContextSpaceDescriptor to test.
+     * @return True, if a ContextSpaceDescriptor with the same ID, parent an
+     * context exists in the given collection of ContextSpaceDescriptor, false
+     * otherwise.
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     */
     public static boolean containsIdentical(final ContextSpaceDescriptor descriptor, final Collection<ContextSpaceDescriptor> descriptors) throws DescriptorSchemaException
     {
         boolean found = false;
@@ -255,12 +437,30 @@ public class DescriptorSchema
         return found;
     }
 
+    /**
+     * Test if a ContextSpaceDescriptor with the same ID, parent an context
+     * exists in the schema.
+     *
+     * @param descriptor ContextSpaceDescriptor to test.
+     * @return True, if a ContextSpaceDescriptor with the same ID, parent an
+     * context exists in the schema, false otherwise.
+     * @throws DescriptorSchemaException Any error while writing to the
+     * Knowledge Base.
+     */
     public boolean containsIdentical(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         final Collection<ContextSpaceDescriptor> descriptors = getDescriptors();
         return containsIdentical(descriptor, descriptors);
     }
 
+    /**
+     * Removes a parent from a ContextSpaceDescriptor, setting its
+     * {@link ContextSpaceDescriptor#parent} to null.
+     *
+     * @param descriptor The ContextSpaceDescriptor to remove the parent from.
+     * @throws DescriptorSchemaException If the ContextSpaceDescriptor does not
+     * exist in the schema
+     */
     public void clearParent(final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> existingDescriptors = getDescriptors();
@@ -273,12 +473,32 @@ public class DescriptorSchema
         saveDescriptor(descriptor);
     }
 
+    /**
+     * Adds a child to a ContextSpaceDescriptor by simply calling
+     * <code>setParent(child, descriptor)</code> of this class.
+     *
+     * @param descriptor The ContextSpaceDescriptor to add a child.
+     * @param child the child to add
+     * @throws DescriptorSchemaException
+     *
+     * @see #setParent(ContextSpaceDescriptor, ContextSpaceDescriptor)
+     */
     public void addChild(final ContextSpaceDescriptor descriptor, final ContextSpaceDescriptor child) throws DescriptorSchemaException
     {
         final Set<ContextSpaceDescriptor> singelton = Collections.singleton(child);
         addChildren(descriptor, singelton);
     }
 
+    /**
+     * Adds a collection of ContextSpaceDescriptor as direct children to a
+     * ContextSpaceDescriptor by calling
+     * <code>setParent(element, descriptor) for</code> for each element in
+     * the collection.
+     *
+     * @param descriptor he ContextSpaceDescriptor to add the children.
+     * @param children The collection to add.
+     * @throws DescriptorSchemaException
+     */
     public void addChildren(final ContextSpaceDescriptor descriptor, final Collection<ContextSpaceDescriptor> children) throws DescriptorSchemaException
     {
         for (ContextSpaceDescriptor child : children)
@@ -287,6 +507,13 @@ public class DescriptorSchema
         }
     }
 
+    /**
+     * Serialize a collection of ContextSpaceDescriptor as XML and sets it as
+     * Property on the Knowledge base of this schema.
+     * 
+     * @param descriptors The collection to write.
+     * @throws DescriptorSchemaException Any error in the serialization process.
+     */
     private void writeDescriptors(final Collection<ContextSpaceDescriptor> descriptors) throws DescriptorSchemaException
     {
         try
@@ -299,6 +526,13 @@ public class DescriptorSchema
         }
     }
 
+    /**
+     * Reads the as XML serialized ContextSpaceDescriptor, deserialize them 
+     * and returns them as list.
+     * 
+     * @return The deserialized ContextSpaceDescriptors as List.
+     * @throws DescriptorSchemaException Any error in the deserialization process.
+     */
     private List<ContextSpaceDescriptor> readDescriptors() throws DescriptorSchemaException
     {
         List<ContextSpaceDescriptor> deserializedDescriptors = new ArrayList<>();

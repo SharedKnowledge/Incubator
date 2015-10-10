@@ -1,15 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package example.descriptor.chat.base;
 
 /**
+ * A listener to notify changes in a chat.
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public interface ChatListener
 {
+    /**
+     * Method called when a chat changes.
+     */
     public void chatChanged();
 }

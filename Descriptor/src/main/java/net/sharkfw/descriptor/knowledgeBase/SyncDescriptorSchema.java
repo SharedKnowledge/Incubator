@@ -1,19 +1,23 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.sharkfw.descriptor.knowledgeBase;
 
 import net.sharkfw.knowledgeBase.sync.SyncKB;
 
 /**
+ * A {@link DescriptorSchema} usable for synchronisation. It is always based
+ * on a {@link SyncKB} which alway has an owner.
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public class SyncDescriptorSchema extends DescriptorSchema
 {
 
+    /**
+     * Constructor only accepts {@link SyncKB} and throws an exception if it
+     * has no owner.
+     * 
+     * @param syncKB 
+     * @throws IllegalArgumentException If syncKB has no owner.
+     */
     public SyncDescriptorSchema(final SyncKB syncKB)
     {
         super(syncKB);
@@ -23,6 +27,11 @@ public class SyncDescriptorSchema extends DescriptorSchema
         }
     }
 
+    /**
+     * Get the underlying Knowledge Base as {@link SyncKB}.
+     * 
+     * @return The underlying Knowledge Base as {@link SyncKB}.
+     */
     public SyncKB getSyncKB()
     {
         return (SyncKB) this.getSharkKB();

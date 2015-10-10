@@ -5,7 +5,6 @@
  */
 package net.sharkfw.descriptor.knowledgeBase;
 
-import example.descriptor.chat.javafx.ChatViewController;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,12 +17,11 @@ import net.sharkfw.knowledgeBase.SharkCSAlgebra;
 import net.sharkfw.knowledgeBase.SharkKB;
 import net.sharkfw.knowledgeBase.SharkKBException;
 import net.sharkfw.knowledgeBase.inmemory.InMemoKnowledge;
-import net.sharkfw.system.L;
 
 /**
  * This class extract {@link Knowledge} form an {@link SharkKB} based on a
  * {@link ContextSpaceDescriptor}. There are 3 ways of extraction. Extraction of
- * the context of a descriptor, extraction od its subtree and extraction of it
+ * the context of a descriptor, extraction of its subtree and extraction of it
  * whole tree.
  *
  * @author Nitros Razril (pseudonym)
@@ -42,11 +40,11 @@ public final class DescriptorAlgebra
      * Gets the {@link SharkCS} of the descriptor and passes it to
      * {@link SharkCSAlgebra#extract(SharkKB, SharkCS)}. <br/>
      * If the descriptor is empty. A {@link Knowledge} with no
-     * {@link ContextPoint} ist returned.
+     * {@link ContextPoint} is returned.
      *
      * @param source The SharkKB to extract from.
      * @param descriptor The descriptor describing the data.
-     * @return The exctracted Knowledge.
+     * @return The extracted Knowledge.
      * @throws SharkKBException Any exception
      * {@link SharkCSAlgebra#extract(SharkKB, SharkCS)} throws.
      */
@@ -71,12 +69,12 @@ public final class DescriptorAlgebra
     }
 
     /**
-     * Convenience method. Gets the {@link SharkKB} vom the schema and delegates
+     * Convenience method. Gets the {@link SharkKB} from the schema and delegates
      * to {@link #extract(SharkKB, ContextSpaceDescriptor)}.
      *
      * @param schema Schema to get the {@link SharkKB} from.
      * @param descriptor The descriptor describing the data.
-     * @return The exctracted Knowledge.
+     * @return The extracted Knowledge.
      * @throws SharkKBException SharkKBException Any exception
      * {@link #extract(SharkKB, ContextSpaceDescriptor)} throws.
      */
@@ -86,6 +84,18 @@ public final class DescriptorAlgebra
         return extract(source, descriptor);
     }
 
+    /**
+     * Extracts a subtree from a schema. The resulting {@link Knowledge} will
+     * contain the Knowledge of the context of the given descriptor as well as
+     * all its children. It uses an recursively algorithm to do so.
+     * 
+     * @param schema The schema to extract from.
+     * @param descriptor The descriptor to extract the subtree for.
+     * @return Knowledge of the context of the given descriptor as well as
+     * all its children.
+     * @throws DescriptorSchemaException Any error while getting the children.
+     * @throws SharkKBException Any error while extracting the Knowledge.
+     */
     public static Knowledge extractWithSubtree(final DescriptorSchema schema, final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException, SharkKBException
     {
         Knowledge finalKnowledge = new InMemoKnowledge();
@@ -100,6 +110,17 @@ public final class DescriptorAlgebra
         return finalKnowledge;
     }
 
+    /**
+     * Extracts the {@link Knowledge} of a whole tree. It will first search 
+     * the root of the tree of the given descriptor and that extract the roots
+     * subtree. This results in getting the Knowledge of the whole tree.
+     * 
+     * @param schema The schema to extract from.
+     * @param descriptor The descriptor to extract the tree for. 
+     * @return Knowledge of the whole tree of the descriptor.
+     * @throws DescriptorSchemaException Any error while getting the children and parents.
+     * @throws SharkKBException Any error while extracting the Knowledge.
+     */
     public static Knowledge extractWholeTree(final DescriptorSchema schema, final ContextSpaceDescriptor descriptor) throws DescriptorSchemaException, SharkKBException
     {
         ContextSpaceDescriptor root = descriptor;
@@ -110,6 +131,13 @@ public final class DescriptorAlgebra
         return extractWithSubtree(schema, root);
     }
 
+    /**
+     * Merges to {@link Knowledge} into one with no identical {@link ContextPoint}.
+     * 
+     * @param firstKnowledge First Knowledge to merge.
+     * @param secondKnowledge First Knowledge to merge.
+     * @return Merged Knowledge with no identical ContextPoint.
+     */
     private static Knowledge mergeKnowledge(final Knowledge firstKnowledge, final Knowledge secondKnowledge)
     {
         final Knowledge mergedKnowledge = new InMemoKnowledge();
