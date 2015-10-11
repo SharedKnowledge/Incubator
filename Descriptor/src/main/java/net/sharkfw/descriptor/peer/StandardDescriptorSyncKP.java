@@ -1,7 +1,5 @@
 package net.sharkfw.descriptor.peer;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorAlgebra;

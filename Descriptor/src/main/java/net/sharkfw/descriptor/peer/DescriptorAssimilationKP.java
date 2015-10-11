@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 import javax.xml.bind.JAXBException;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
-import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
 import net.sharkfw.descriptor.knowledgeBase.SyncDescriptorSchema;
 import net.sharkfw.kep.format.SerializerFactroy;
