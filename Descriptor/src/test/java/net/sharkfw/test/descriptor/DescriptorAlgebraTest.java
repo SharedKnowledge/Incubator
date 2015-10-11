@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.sharkfw.test.descriptor;
 
 import java.util.Collections;
@@ -27,17 +22,49 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
+ * This class tests the {@link DescriptorAlgebra} class.
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public class DescriptorAlgebraTest extends AbstractDescriptorTest
 {
 
+    /**
+     * A sting to ad as test information.
+     */
     private final static String TEST_INFORMATION = "Hello World!";
+    /**
+     * ID of a {@link ContextSpaceDescriptor} for Alice.
+     */
     private final static String ALICE_ID = "ALICE";
+    /**
+     * ID of a {@link ContextSpaceDescriptor} that is empty.
+     */
     private final static String FIRST_EMPTY_ID = "FIRST_EMPTY";
+    /**
+     * ID of another {@link ContextSpaceDescriptor} that is empty.
+     */
     private final static String SECOND_EMPTY_ID = "SECOND_EMPTY";
 
+    /**
+     * Tests normal, tree and subtree extraction. The following tree is used.
+     * Read from top to bottom. <br/><br/>
+     *
+     * <table border="1">
+     * <tr><td align="center" colspan="2">Deutschland</td></tr>
+     * <tr><td align="center" colspan="2">First Empty Descriptor</td></tr>
+     * <tr><td align="center" colspan="2">Java</td></tr>
+     * <tr>
+     * <td align="center">Second Empty Descriptor</td>
+     * <td align="center">Teapot</td>
+     * </tr>
+     * <tr>
+     * <td align="center">C</td>
+     * <td align="center"></td>
+     * </tr>
+     * </table>
+     *
+     */
     @Test
     public void extractionTest() throws SharkKBException, DescriptorSchemaException
     {

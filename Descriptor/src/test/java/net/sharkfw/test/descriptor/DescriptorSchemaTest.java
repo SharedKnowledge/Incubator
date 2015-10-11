@@ -1,12 +1,5 @@
 package net.sharkfw.test.descriptor;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,22 +19,34 @@ import net.sharkfw.system.L;
 import static net.sharkfw.test.descriptor.AbstractDescriptorTest.JAVA_NAME;
 import net.sharkfw.test.util.Dummy;
 import net.sharkfw.test.util.DummyDataFactory;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
+ * A class to test the {@link DescriptorSchema} class.
  *
  * @author Nitros Razril (pseudonym)
  */
 public class DescriptorSchemaTest extends AbstractDescriptorTest
 {
 
+    /**
+     * ID of a {@link ContextSpaceDescriptor} that is empty.
+     */
     private final static String FIRST_EMPTY_ID = "FIRST_EMPTY";
+    /**
+     * ID of another {@link ContextSpaceDescriptor} that is empty.
+     */
     private final static String SECOND_EMPTY_ID = "SECOND_EMPTY";
+    /**
+     * Returned if an index was not found.
+     */
     private static final int NOT_FOUND = -1;
 
+    /**
+     * Save a {@link ContextSpaceDescriptor}. It should be in the
+     * {@link DescriptorSchema} now.
+     */
     @Test
     public void saveAndLoadTest() throws SharkKBException, JAXBException, DescriptorSchemaException
     {
@@ -97,6 +102,11 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         Assert.assertTrue(savedDescriptors.isEmpty());
     }
 
+    /**
+     * Tests if
+     * {@link DescriptorSchema#setParent(ContextSpaceDescriptor, ContextSpaceDescriptor)}
+     * throws the described exceptions
+     */
     @Test
     public void errorTest() throws SharkKBException, DescriptorSchemaException
     {
@@ -149,6 +159,9 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         Assert.assertTrue(clearError);
     }
 
+    /**
+     * Tests if relationships are correctly set.
+     */
     @Test
     public void relationshipTest() throws DescriptorSchemaException, SharkKBException
     {
@@ -186,6 +199,9 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         Assert.assertTrue(javaChildren.contains(teapotDescriptor));
     }
 
+    /**
+     * Tests the {@link DescriptorSchema} methods that begin with contains.
+     */
     @Test
     public void containsTest() throws SharkKBException, DescriptorSchemaException
     {
@@ -206,6 +222,9 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
     }
 
     /**
+     * Tests if you can properly get tree and subtree. Uses the following tree, 
+     * read from top to bottom:<br/><br/>
+     *
      * <table border="1">
      * <tr><td align="center" colspan="2">Deutschland</td></tr>
      * <tr><td align="center" colspan="2">First Empty Descriptor</td></tr>
@@ -219,6 +238,7 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
      * <td align="center"></td>
      * </tr>
      * </table>
+     *
      */
     @Test
     public void treeTest() throws SharkKBException, DescriptorSchemaException
@@ -315,6 +335,10 @@ public class DescriptorSchemaTest extends AbstractDescriptorTest
         Assert.assertFalse(subtree.contains(deutschlandDescriptor));
     }
 
+    /**
+     * Test if the override methods properly override a
+     * {@link ContextSpaceDescriptor}
+     */
     @Test
     public void overrideTest() throws SharkKBException, DescriptorSchemaException
     {

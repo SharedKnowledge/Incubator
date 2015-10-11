@@ -3,7 +3,6 @@ package net.sharkfw.knowledgeBase.sync;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
@@ -32,20 +31,61 @@ import net.sharkfw.system.SharkException;
 import net.sharkfw.system.SharkSecurityException;
 
 /**
+ * This class is ab abstraction of {@link SyncKP}. It manages the actual
+ * synchronisation. A peer A can either pull data from a peer B or create a pull
+ * request so peer B pulls data from peer A. In case of a pull, peer A send an
+ * interest to peer B. Peer B tests via
+ * {@link #isInterested(SharkCS, KEPConnection)} is it will proceed. Than
+ * extract data from it {@link SyncKB}, filters it to only send data changes
+ * since last encountering peer A and send it to peer A. Peer A will then insert
+ * all data of peer B, that does not exists in peer As {@link SyncKB} or has a
+ * lower version in its Knowledge Base.
  *
  * @author Nitros Razril (pseudonym)
  */
 public abstract class AbstractSyncKP extends KnowledgePort
 {
 
+    /**
+     * Key to get the action metadata.
+     */
     private static final String ACTION_KEY = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_KEY";
+    /**
+     * Value for the pull action.
+     */
     private static final String ACTION_PULL = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_PULL";
+    /**
+     * Value fpr the pull request action.
+     */
     private static final String ACTION_PULLREQUEST = "net.sharkfw.knowledgeBase.sync.AbstractSyncKP#ACTION_PULLREQUEST";
-
+    /**
+     * Timestamps when peers were last encountered.
+     */
     private final TimestampList timestampList;
+    /**
+     * FragmentationParameter for extracting topics.
+     */
     private final FragmentationParameter topicsFP;
+    /**
+     * FragmentationParameter for extracting peers.
+     */
     private final FragmentationParameter peersFP;
 
+    /**
+     * Sets up this class, see {@link KnowledgePort#KnowledgePort(SharkEngine, SharkKB).
+     * Form teh given interest the remote peer dimension is used to create
+     * the {@link TimestampList}.
+     *
+     * @param sharkEngine Engine for communication.
+     * @param syncKB SyncKB of the user of the peer using this port. Must have
+     * an owner.
+     * @param context Interest to use.
+     * @param topicFP FragmentationParameter for extracting topics.
+     * @param peerFP FragmentationParameter for extracting peers.
+     *
+     * @throws IllegalArgumentException If syncKBhas no owner.
+     * @throws IllegalStateException Any error while initializing this class.
+     */
     public AbstractSyncKP(final SharkEngine sharkEngine, final SyncKB syncKB, final SharkCS context, final FragmentationParameter topicFP, final FragmentationParameter peerFP)
     {
         super(sharkEngine, syncKB);
@@ -56,13 +96,8 @@ public abstract class AbstractSyncKP extends KnowledgePort
         try
         {
             this.interest = InMemoSharkKB.createInMemoCopy(context);
-            final PeerSTSet remotePeers = context.getRemotePeers();         
+            final PeerSTSet remotePeers = context.getRemotePeers();
             this.timestampList = new TimestampList(remotePeers, syncKB);
-            this.timestampList.removePeer(null); // Bug Workaround: Remove Junk
-            for(TimestampList.PeerTimestamp s : timestampList._timestamps){
-                System.out.println("********** Stamp " + s.getPeer().getName());
-            }
-            
             this.topicsFP = topicFP;
             this.peersFP = peerFP;
         } catch (SharkKBException ex)
@@ -71,11 +106,32 @@ public abstract class AbstractSyncKP extends KnowledgePort
         }
     }
 
+    /**
+     * Convenience constructor. Uses {@link FragmentationParameter#getZeroFP()}
+     * for the FragmentationParameter parameters.
+     *
+     * @param sharkEngine Engine for communication.
+     * @param syncKB SyncKB of the user of the peer using this port. Must have
+     * an owner.
+     * @param context Interest to use.
+     *
+     * @throws IllegalArgumentException If syncKBhas no owner.
+     * @throws IllegalStateException Any error while initializing this class.
+     */
     public AbstractSyncKP(final SharkEngine sharkEngine, final SyncKB syncKB, final SharkCS context)
     {
         this(sharkEngine, syncKB, context, FragmentationParameter.getZeroFP(), FragmentationParameter.getZeroFP());
     }
 
+    /**
+     * Pull data from all remote peers. See class description for more.
+     *
+     * @throws SharkSecurityException see
+     * {@link SharkEngine#publishKP(KnowledgePort)}
+     * @throws IOException {@link SharkEngine#publishKP(KnowledgePort)}
+     * @throws IllegalStateException If this class engine {@link SharkEngine#isStarted() returns
+     * null
+     */
     public void pull() throws SharkSecurityException, IOException
     {
         if (!se.isStarted())
@@ -85,6 +141,20 @@ public abstract class AbstractSyncKP extends KnowledgePort
         se.publishKP(this);
     }
 
+    /**
+     * Requests all remote peers to pull data from this peer.It uses a Flag in
+     * the Identifier, see {@link #getIdentifier(SharkCS), to do so.
+     *
+     * @throws SharkKBException Errors while setting the action.
+     * @throws SharkSecurityException SharkSecurityException see
+     * {@link SharkEngine#publishKP(KnowledgePort)}
+     * @throws IOException SharkSecurityException see
+     * {@link SharkEngine#publishKP(KnowledgePort)}
+     * @throws IllegalStateException If this class engine {@link SharkEngine#isStarted() returns
+     * null
+     *
+     * @see #doExpose(SharkCS, KEPConnection)
+     */
     public void pullRequest() throws SharkKBException, SharkSecurityException, IOException
     {
         if (!se.isStarted())
@@ -96,12 +166,49 @@ public abstract class AbstractSyncKP extends KnowledgePort
         clearAction();
     }
 
+    /**
+     * Subclasses of this class must provide how to extracted the Knowledge to
+     * sync.
+     *
+     * @return Knowledge to sync.
+     * @throws SharkKBException Errors while extracting the Knowledge
+     */
     protected abstract Knowledge getOffer() throws SharkKBException;
 
+    /**
+     * Subclasses of this class must be able to find the identifier. This is a
+     * SemanticTag in any of the dimension of context. The tag is used to add
+     * metadata to it as a property.
+     *
+     * @param context Interest to extract the identifier from.
+     * @return The SemanticTag that is the identifier.
+     */
     protected abstract SemanticTag getIdentifier(final SharkCS context);
 
+    /**
+     * Subclasses of this class must tell if they are interested in processing
+     * the received data. The two parameters are form the
+     * KnowledgePort#doExpose(knowledgeBase.SharkCS, KEPConnection) method.
+     *
+     * @param context The send interest.
+     * @param kepConnection A communication object containing data of the
+     * communication
+     * @return True, if this class should process the send data, false
+     * otherwise.
+     *
+     * @see KnowledgePort#doExpose(knowledgeBase.SharkCS, KEPConnection)
+     */
     protected abstract boolean isInterested(final SharkCS context, final KEPConnection kepConnection);
 
+    /**
+     * Gets an action metadata flag form the given context. The tag containing
+     * the metadata is found via {@link #getIdentifier(SharkCS)}. If no action
+     * was set, it always returns {@link #ACTION_PULL}
+     *
+     * @param context Context to get the data from.
+     * @return The set action, or {@link #ACTION_PULL} if none was set.
+     * @throws SharkKBException Any error while reading the action from the tag.
+     */
     protected String getAction(final SharkCS context) throws SharkKBException
     {
         final SemanticTag identifier = getIdentifier(context);
@@ -109,17 +216,41 @@ public abstract class AbstractSyncKP extends KnowledgePort
         return (actionProperty == null) ? ACTION_PULL : actionProperty;
     }
 
+    /**
+     * Sets a action to the metadata tag. The tag containing the metadata is
+     * found via {@link #getIdentifier(SharkCS)}.
+     *
+     * @param action Action to set.
+     * @throws SharkKBException Any error while writing the action to the tag
+     */
     protected void setAction(final String action) throws SharkKBException
     {
         final SemanticTag identifier = getIdentifier(interest);
         identifier.setProperty(ACTION_KEY, action);
     }
 
+    /**
+     * Clears action from the metadata tag. This is the same as calling
+     * <code>setAction(null)</code>, which this method does.
+     *
+     * @throws SharkKBException Any error while writing the action to the tag
+     */
     protected void clearAction() throws SharkKBException
     {
         setAction(null);
     }
 
+    /**
+     * Method to be overridden by subclass if they define own actions. Throws an
+     * {@link  IllegalArgumentException} per default.
+     *
+     * @param action Action currently set.
+     * @param context Interest received.
+     * @param kepConnection A communication object containing data of the
+     * communication
+     *
+     * @see KnowledgePort#doExpose(knowledgeBase.SharkCS, KEPConnection)
+     */
     protected void doAction(final String action, final SharkCS context, final KEPConnection kepConnection)
     {
         throw new IllegalArgumentException("No valid action found in SharkCS.");
@@ -137,11 +268,12 @@ public abstract class AbstractSyncKP extends KnowledgePort
      * received {@link ContextPoint} will replace the local {@link ContextPoint}
      * or the received one is simply inserted respectively.
      *
-     * @param knowledge
-     * @param kepConnection
+     * @param knowledge Knowledge to insert.
+     * @param kepConnection A communication object containing data of the
+     * communication
      *
      * @throws IllegalStateException If a SharkKBException occurs while
-     * executing this method. That means, the KP can't work propertly.
+     * executing this method. That means, the KP can't work properly.
      */
     @Override
     protected void doInsert(final Knowledge knowledge, final KEPConnection kepConnection)
@@ -182,6 +314,35 @@ public abstract class AbstractSyncKP extends KnowledgePort
         }
     }
 
+    /**
+     * THis method via {@link #isInterested(nSharkCS, KEPConnection)} if it
+     * should process the send data. Than it gets the metadata tag via
+     * {@link #getIdentifier(SharkCS)} and test gets the action via
+     * {@link #getAction(SharkCS)}.<br><br/>
+     *
+     * Depending on the action the following methods are called.<br/><br/>
+     *
+     * <table border ="1">
+     * <tr>
+     * <td>{@link #ACTION_PULL}</td>
+     * <td>{@link #sendKnowledge(KEPConnection)}.</td>
+     * <tr>
+     * <td>{@link #ACTION_PULLREQUEST}</td>
+     * <td>{@link #pull()}.</td>
+     * </tr>
+     * <tr>
+     * <td>No matching action found.</td>
+     * <td>{@link #doAction(String, SharkCS, KEPConnection)}</td>
+     * </table>
+     *
+     * @param context Interest received.
+     * @param kepConnection A communication object containing data of the
+     * communication
+     *
+     * @throws IllegalStateException If any error occurs in the process of this
+     * method.
+     *
+     */
     @Override
     protected void doExpose(final SharkCS context, final KEPConnection kepConnection)
     {
@@ -227,22 +388,25 @@ public abstract class AbstractSyncKP extends KnowledgePort
         }
     }
 
+    /**
+     * Gets the offer via {@link #getOffer()}. This is then filter so, that
+     * only the data is send, that was changed this the last encounter with the
+     * peer who requested the data. Finally, sends the data to 
+     * {@link KEPConnection#getSender()}. Also, all containing peers and topic
+     * in the extracted {@link ContextPoint} are added to the vocabulary of the
+     * knowledge. Those are extracted via the {@link FragmentationParameter}
+     * of this class.
+     * 
+     * @param kepConnection A communication object containing data of the
+     * communication
+     *
+     * @throws SharkException Any error while extracting and filtering the data.
+     */
     private void sendKnowledge(final KEPConnection kepConnection) throws SharkException
     {
         final PeerSemanticTag sender = kepConnection.getSender();
         final String[] senderAddresses = sender.getAddresses();
-        
-        System.out.println("*********** " + sender.getName());
-        for (TimestampList.PeerTimestamp stamp : timestampList._timestamps)
-        {
-            if(stamp.getPeer() != null)
-            System.out.println("*********** " + stamp.getPeer().getName() + ", " + stamp.getDate().getTime());
-            else
-                 System.out.println("*********** NULL");
-        }
-        
         final Date lastPeerMeeting = timestampList.getTimestamp(sender);
-
         final List<SyncContextPoint> syncContextPoints = getOffer(lastPeerMeeting);
         //build Knowledge
         final Knowledge knowledge = new InMemoSharkKB().asKnowledge();
@@ -274,6 +438,17 @@ public abstract class AbstractSyncKP extends KnowledgePort
         this.notifyInsertSent(this, knowledge);
     }
 
+    /**
+     * Gets the actual offer via {@link #getOffer()} and filters it so, that
+     * only the data is remains, that was changed this the last encounter with the
+     * peer who requested the data.
+     * 
+     * @param lastPeerMeeting Last encounter with a peer.
+     * @return A List of contextpoints that where changed since lastPeerMeeting.
+     * This is filtered form {@link #getOffer()}.
+     * 
+     * @throws SharkKBException Any error while extracting and filtering the data.
+     */
     private List<SyncContextPoint> getOffer(final Date lastPeerMeeting) throws SharkKBException
     {
         final List<SyncContextPoint> syncContextPoints = new ArrayList<>();
@@ -306,6 +481,13 @@ public abstract class AbstractSyncKP extends KnowledgePort
         return syncContextPoints;
     }
 
+    /**
+     * Output a log message message if a {@link ContextPoint} was skipped because
+     * is has not changed since the last encounter.
+     * 
+     * @param contextPointTimestamp Timestamp of {@link ContextPoint}.
+     * @param lastPeerMeeting Last encounter with a peer. 
+     */
     private void printTimestampNotAfterDebugMessage(final Date contextPointTimestamp, final Date lastPeerMeeting)
     {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd G 'at' HH:mm:ss z", Locale.getDefault());

@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.sharkfw.test.descriptor;
 
 import java.io.IOException;
@@ -35,19 +30,40 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
+ * Test the {@link StandardDescriptorSyncKP} class.
  *
  * @author Nitros Razril (pseudonym)
  */
 public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
 {
 
+    /**
+     * A ID for a {@link ContextSpaceDescriptor} of Java and C.
+     */
     private static final String DESCRIPTOR_ID = "C_and_Java";
 
+    /**
+     * A topic about Java.
+     */
     private final SemanticTag javaTopic;
+    /**
+     * A topic about C.
+     */
     private final SemanticTag cTopic;
+    /**
+     * A topic about teapot.
+     */
     private final SemanticTag teapotTopic;
+    /**
+     * A topic about Deutschland.
+     */
     private final SemanticTag deTopic;
 
+    /**
+     * Creates all the topics.
+     *
+     * @throws SharkKBException If creating the topics fails.
+     */
     public StandardDescriptorSyncKPTest() throws SharkKBException
     {
         super();
@@ -57,6 +73,9 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         deTopic = new InMemoSTSet().createSemanticTag(DEUTSCHLAND_NAME, DEUTSCHLAND_NAME);
     }
 
+    /**
+     * Pull data from a peer. Peer should get all new contextpoints.
+     */
     @Test
     public void pullTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, SharkSecurityException, IOException, InterruptedException
     {
@@ -155,6 +174,9 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         bobEngine.stopTCP();
     }
 
+    /**
+     * Request a pull data from a peer. Remote Peer should get all new contextpoints.
+     */
     @Test
     public void pullRequestTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, IOException, SharkSecurityException, InterruptedException
     {
@@ -253,6 +275,9 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         bobEngine.stopTCP();
     }
 
+    /**
+     * Tests if a contextpoint is updates id newer on other peers.
+     */
     @Test
     public void updateTest() throws SharkKBException, DescriptorSchemaException, SharkSecurityException, IOException, InterruptedException, SharkProtocolNotSupportedException
     {
@@ -344,6 +369,10 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         bobEngine.stopTCP();
     }
 
+    /**
+     * Test the synchronization of {@link ContextSpaceDescriptor}. Both ports
+     * should have the same descriptor afterwards.
+     */
     @Test
     public void syncDescriptorTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, IOException, SharkSecurityException, InterruptedException
     {
@@ -416,6 +445,9 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         bobEngine.stopTCP();
     }
 
+    /**
+     * Tests if changes in peers a notified by other peers.
+     */
     @Test
     public void recipientsChangeTest() throws SharkKBException, DescriptorSchemaException, SharkSecurityException, SharkProtocolNotSupportedException, IOException, InterruptedException
     {
@@ -493,6 +525,9 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
         bobEngine.stopTCP();
     }
 
+    /**
+     * Tests if port is inactive if unsubscribed.
+     */
     @Test
     public void subscriptionTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, IOException, SharkSecurityException, InterruptedException
     {
@@ -539,7 +574,7 @@ public class StandardDescriptorSyncKPTest extends AbstractDescriptorTest
 
         aliceEngine.startTCP(alice.getPort());
         bobEngine.startTCP(bob.getPort());
-        
+
         bobPort.unsubscribe();
 
         alicePort.pull();

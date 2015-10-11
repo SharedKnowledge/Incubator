@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.sharkfw.test.descriptor;
 
 import java.util.ArrayList;
@@ -20,14 +15,22 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *
+ * Tests the serialization of {@link ContextSpaceDescriptor}.
+ * 
  * @author Nitros Razril (pseudonym)
  */
 public class DescriptorSerializationTest extends AbstractDescriptorTest
 {
 
+    /**
+     * Returned if an index was not found.
+     */
     private static final int NOT_FOUND = -1;
 
+    /**
+     * Serialize a {@link ContextSpaceDescriptor} and deserialize it
+     * afterwards. Content should still be same.
+     */
     @Test
     public void serializationAndDeserializationTest() throws SharkKBException, JAXBException
     {
@@ -61,7 +64,7 @@ public class DescriptorSerializationTest extends AbstractDescriptorTest
                 Assert.fail("Descriptor not found in original List.");
             }
         }
-        
+
         final String javaDescriptorAsXML = serializer.serialize(javaDescriptor);
         Assert.assertFalse(javaDescriptorAsXML.isEmpty());
         final ContextSpaceDescriptor deserializedJavaDescriptor = serializer.deserialize(javaDescriptorAsXML, ContextSpaceDescriptor.class);

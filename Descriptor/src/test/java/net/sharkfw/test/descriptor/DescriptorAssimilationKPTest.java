@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.sharkfw.test.descriptor;
 
 import java.io.IOException;
 import junit.framework.Assert;
 import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
+import net.sharkfw.descriptor.knowledgeBase.DescriptorSchema;
 import net.sharkfw.descriptor.knowledgeBase.DescriptorSchemaException;
 import net.sharkfw.descriptor.knowledgeBase.SyncDescriptorSchema;
 import net.sharkfw.descriptor.peer.DescriptorAssimilationKP;
@@ -24,12 +20,18 @@ import net.sharkfw.test.util.DummyDataFactory;
 import org.junit.Test;
 
 /**
- *
- * @author Nitros
+ *  A class to test the {@link DescriptorAssimilationKP}.
+ * 
+ * @author @author Nitros Razril (pseudonym)
  */
 public class DescriptorAssimilationKPTest extends AbstractDescriptorTest
 {
 
+    /**
+     * Send a {@link ContextSpaceDescriptor} from Alice to Bob. Bobs schema
+     * {@link DescriptorSchema} should have the new @link ContextSpaceDescriptor}
+     * afterwards.
+     */
     @Test
     public void asssimilationTest() throws SharkKBException, DescriptorSchemaException, SharkProtocolNotSupportedException, IOException, SharkSecurityException, InterruptedException
     {
@@ -67,6 +69,5 @@ public class DescriptorAssimilationKPTest extends AbstractDescriptorTest
 
         aliceEngine.stopTCP();
         bobEngine.stopTCP();
-
     }
 }

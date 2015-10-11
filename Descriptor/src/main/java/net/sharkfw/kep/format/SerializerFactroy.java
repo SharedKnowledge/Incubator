@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package net.sharkfw.kep.format;
 
 import javax.xml.bind.JAXBException;
@@ -10,16 +5,27 @@ import net.sharkfw.descriptor.knowledgeBase.ContextSpaceDescriptor;
 import net.sharkfw.xml.jaxb.JAXBSerializer;
 
 /**
+ * A factory class as an singleton holden different {@link JAXBSerializer} to
+ * reuse to prevent overload in initializing them.
  *
- * @author Nitros
+ * @author Nitros Razril (pseudonym)
  */
 public enum SerializerFactroy
 {
 
+    /**
+     * The singleton instance.
+     */
     INSTANCE;
-
+    /**
+     * {@link JAXBSerializer} initialized for {@link ContextSpaceDescriptor}.
+     */
     private JAXBSerializer descriptorSerializer;
 
+    /**
+     * Initializes all {@link JAXBSerializer} to use later. Preventing overload
+     * in the process.
+     */
     private SerializerFactroy()
     {
         try
@@ -31,6 +37,11 @@ public enum SerializerFactroy
         }
     }
 
+    /**
+     * Gets a serializer to serialize {@link ContextSpaceDescriptor}.
+     * 
+     * @return A serializer to serialize {@link ContextSpaceDescriptor}.
+     */
     public JAXBSerializer getDescriptorSerializer()
     {
         return descriptorSerializer;
